@@ -4,11 +4,13 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <sstream>
 
 #include "common.h"
 #include "functions.h"
 #include "row.h"
 #include "overview.h"
+#include "utils.h"
 
 extern HANDLE PHANDLE;
 extern Overview *overviews;
@@ -108,7 +110,7 @@ void Row::add_active_window(PHLWINDOW window)
     // Evaluate window rules
     auto store_modifier = modifier;
     for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:modemodifier")) {
+        if (string_starts_with(r->m_rule, "plugin:scroller:modemodifier")) {
             const auto modemodifier = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             // params: row|column after|before|end|beginning focus|nofocus
             std::istringstream iss(modemodifier);
@@ -979,11 +981,11 @@ void Row::post_event(const std::string &event)
 {
     if (event == "mode") {
         auto str_mode = mode == Mode::Row ? "row" : "column";
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("mode, {}, {}, {}, {}:{}, {}, {}", str_mode,
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("mode, {}, {}, {}, {}:{}, {}, {}", str_mode,
             modifier.get_position_string(), modifier.get_focus_string(), modifier.get_auto_mode_string(), modifier.get_auto_param(),
             modifier.get_center_column_string(), modifier.get_center_window_string())});
     } else if (event == "overview") {
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("overview, {}", overview ? 1 : 0)});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("overview, {}", overview ? 1 : 0)});
     } else if (event == "admitwindow") {
         g_pEventManager->postEvent(SHyprIPCEvent{"scroller", "admitwindow"});
     } else if (event == "expelwindow") {

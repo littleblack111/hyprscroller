@@ -1,4 +1,5 @@
 #include "sizes.h"
+#include "utils.h"
 
 #include <sstream>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -100,7 +101,7 @@ StandardSize ScrollerSizes::get_window_default_height(PHLWINDOW window)
 {
     // Check window rules
     for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:windowheight")) {
+        if (string_starts_with(r->m_rule, "plugin:scroller:windowheight")) {
             const auto window_height = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             return get_size_from_string(window_height, StandardSize::One);
         }
@@ -118,7 +119,7 @@ StandardSize ScrollerSizes::get_column_default_width(PHLWINDOW window)
 {
     // Check window rules
     for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:columnwidth")) {
+        if (string_starts_with(r->m_rule, "plugin:scroller:columnwidth")) {
             const auto column_width = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             return get_size_from_string(column_width, StandardSize::OneHalf);
         }
