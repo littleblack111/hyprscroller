@@ -16,10 +16,13 @@
 #include "row.h"
 #include "column.h"
 #include "overview.h"
+#include "utils.h"
 
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
+#include <algorithm>
 
 
 extern HANDLE PHANDLE;
@@ -76,7 +79,7 @@ public:
         bool marked = false;
         for(auto it = marks.begin(); it != marks.end(); it++) {
             if (it->second.lock() == window) {
-                g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("mark, 1, {}", it->first)});
+                g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("mark, 1, {}", it->first)});
                 return;
             }
         }
@@ -260,13 +263,13 @@ public:
     }
 
     void post_trail_event() {
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("trail, {}, {}", get_active_number(), get_active_size())});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("trail, {}, {}", get_active_number(), get_active_size())});
     }
     void post_trailmark_event(PHLWINDOW window) {
         bool marked = false;
         if (active != nullptr && active->data()->is_marked(window))
             marked = true;
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("trailmark, {}", marked ? 1 : 0)});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("trailmark, {}", marked ? 1 : 0)});
     }
 
 private:
@@ -316,10 +319,10 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection)
 
     // Check window rules
     for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:group")) {
+        if (string_starts_with(r->m_rule, "plugin:scroller:group")) {
             const auto name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             s->move_active_window_to_group(name);
-        } else if (r->m_rule.starts_with("plugin:scroller:alignwindow")) {
+        } else if (string_starts_with(r->m_rule, "plugin:scroller:alignwindow")) {
             const auto dir = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             if (dir == "l" || dir == "left") {
                 s->align_column(Direction::Left);
@@ -334,11 +337,14 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection)
             } else if (dir == "m" || dir == "middle") {
                 s->align_column(Direction::Middle);
             }
-        } else if (r->m_rule.starts_with("plugin:scroller:marksadd")) {
+        } else if (string_starts_with(r->m_rule, "plugin:scroller:marksadd")) {
             const auto mark_name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
             marks.add(window, mark_name);
         }
     }
+    
+    // Handle only_window_one logic after window is added
+    handleOnlyWindowOneLogic(wid);
 }
 
 /*
@@ -358,6 +364,9 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     if (s == nullptr)
         return;
 
+    // Store the workspace ID before removing the window
+    WORKSPACEID removed_workspace_id = s->get_workspace();
+
     marks.remove(window);
     trails->remove_window(window);
 
@@ -370,6 +379,8 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
                 break;
             }
         }
+        // No need to call handleOnlyWindowOneLogic since the workspace is now empty
+        return;
     }
     if (window->m_isFloating)
         return;
@@ -385,6 +396,9 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
         force_focus_to_window(s->get_active_window());
+    
+    // Handle only_window_one logic for the workspace the window was removed from
+    handleOnlyWindowOneLogic(removed_workspace_id);
 }
 
 /*
@@ -521,13 +535,13 @@ void ScrollerLayout::fullscreenRequestForWindow(PHLWINDOW window,
 
     if (s == nullptr) {
         // save position and size if floating
-        if (window->m_isFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
+        if (window->m_isFloating && CURRENT_EFFECTIVE_MODE == eFullscreenMode::FSMODE_NONE) {
             window->m_lastFloatingSize     = window->m_realSize->goal();
             window->m_lastFloatingPosition = window->m_realPosition->goal();
             window->m_position             = window->m_realPosition->goal();
             window->m_size                 = window->m_realSize->goal();
         }
-        if (EFFECTIVE_MODE == FSMODE_NONE) {
+        if (EFFECTIVE_MODE == eFullscreenMode::FSMODE_NONE) {
             // window is not tiled
             if (window->m_isFloating) {
                 // get back its' dimensions from position and size
@@ -541,7 +555,7 @@ void ScrollerLayout::fullscreenRequestForWindow(PHLWINDOW window,
         } else {
             // apply new pos and size being monitors' box
             const auto PMONITOR   = window->m_monitor.lock();
-            if (EFFECTIVE_MODE == FSMODE_FULLSCREEN) {
+            if (EFFECTIVE_MODE == eFullscreenMode::FSMODE_FULLSCREEN) {
                 *window->m_realPosition = PMONITOR->m_position;
                 *window->m_realSize     = PMONITOR->m_size;
             } else {
@@ -1544,4 +1558,53 @@ void ScrollerLayout::mouse_move(SCallbackInfo& info, const Vector2D &mousePos) {
         }
     }
     inside = false;
+}
+
+size_t ScrollerLayout::countWindowsInWorkspace(WORKSPACEID workspace) {
+    auto s = getRowForWorkspace(workspace);
+    if (s == nullptr) {
+        return 0;
+    }
+    
+    std::vector<PHLWINDOWREF> windows;
+    s->get_windows(windows);
+    return windows.size();
+}
+
+void ScrollerLayout::handleOnlyWindowOneLogic(WORKSPACEID workspace) {
+    static auto *const *ONLY_WINDOW_ONE = (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:only_window_one")->getDataStaticPtr();
+    
+    if (!**ONLY_WINDOW_ONE) {
+        return;
+    }
+    
+    auto s = getRowForWorkspace(workspace);
+    if (s == nullptr) {
+        return;
+    }
+    
+    // Don't apply logic if overview mode is active
+    if (s->is_overview()) {
+        return;
+    }
+    
+    // Don't apply logic if the active window is in fullscreen mode
+    auto active_window = s->get_active_window();
+    if (active_window && window_fullscreen_state(active_window) != eFullscreenMode::FSMODE_NONE) {
+        return;
+    }
+    
+    size_t window_count = countWindowsInWorkspace(workspace);
+    
+    if (window_count == 1) {
+        // Only one window, apply fitsize active to make it fill available space
+        // We need to ensure we're in row mode for this to work as expected
+        Mode current_mode = s->get_mode();
+        s->set_mode(Mode::Row, false);  // Don't force refresh during mode change
+        s->fit_size(FitSize::Active);
+        s->set_mode(current_mode, false);  // Restore original mode
+    } else if (window_count > 1) {
+        // More than one window, ensure normal layout behavior
+        s->recalculate_row_geometry();
+    }
 }

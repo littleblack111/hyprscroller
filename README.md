@@ -923,6 +923,13 @@ Scales the content of the windows in overview mode, like GNOME/MacOS/Windows
 overview mode. Possible arguments are: `true`|`1` (default), or
 `false`|`0`.
 
+### `only_window_one`
+
+When `true`, automatically fullscreens the window when a workspace has only one window.
+This provides a behavior similar to the `scroller:fitsize` dispatcher but is triggered
+automatically. When a second window is added to the workspace, fullscreen mode is 
+automatically disabled. Possible arguments are: `false`|`0` (default), or `true`|`1`.
+
 ### `col.selection_border`
 
 It is the color of the border of selected windows. The default value is
