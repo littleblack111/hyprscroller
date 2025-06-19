@@ -1186,7 +1186,6 @@ void Row::toggle_overview()
         }
 
         Vector2D offset(0.5 * (max.w - w * scale), 0.5 * (max.h - h * scale));
-        preoverview_monitor_scale = monitor->m_scale;
         if (overview_scaled) {
             for (auto c = columns.first(); c != nullptr; c = c->next()) {
                 Column *col = c->data();
@@ -1196,7 +1195,6 @@ void Row::toggle_overview()
             }
             adjust_overview_columns();
 
-            monitor->m_scale *= scale;
             g_pLayoutManager->getCurrentLayout()->recalculateMonitor(monitor->m_id);
             g_pHyprRenderer->damageMonitor(monitor);
             g_pConfigManager->ensureVRR(monitor);
@@ -1218,7 +1216,6 @@ void Row::toggle_overview()
             overviews->set_scale(workspace, 1.0f);
         }
     } else {
-        monitor->m_scale = preoverview_monitor_scale;
         overviews->disable(workspace);
         g_pLayoutManager->getCurrentLayout()->recalculateMonitor(monitor->m_id);
         g_pHyprRenderer->damageMonitor(monitor);

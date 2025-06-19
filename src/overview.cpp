@@ -13,6 +13,7 @@ inline CFunctionHook* g_pLogicalBoxHook = nullptr;
 inline CFunctionHook* g_pRenderSoftwareCursorsForHook = nullptr;
 inline CFunctionHook* g_pGetMonitorFromVectorHook = nullptr;
 inline CFunctionHook* g_pClosestValidHook = nullptr;
+inline CFunctionHook* g_pRenderMonitorHook = nullptr;
 
 Overview *overviews = nullptr;
 
@@ -22,6 +23,7 @@ typedef CBox (*origLogicalBox)(CMonitor *thisptr);
 typedef void (*origRenderSoftwareCursorsFor)(void *thisptr, PHLMONITOR pMonitor, timespec* now, CRegion& damage, std::optional<Vector2D> overridePos);
 typedef Vector2D (*origClosestValid)(void *thisptr, const Vector2D &pos);
 typedef PHLMONITOR (*origGetMonitorFromVector)(void *thisptr, const Vector2D& point);
+typedef void (*origRenderMonitor)(CHyprRenderer *thisptr, PHLMONITOR pMonitor);
 
 class OverviewPassElement : public IPassElement {
 public:
@@ -179,6 +181,18 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
     return pBestMon;
 }
 
+static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
+    WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
+    if (!workspace)
+        workspace = monitor->activeWorkspaceID();
+    float scale = monitor->m_scale;
+    auto data = overviews->data_for(workspace);
+    if (data.overview)
+        monitor->m_scale *= data.scale;
+    ((origRenderMonitor)(g_pRenderMonitorHook->m_original))(thisptr, monitor);
+    monitor->m_scale = scale;
+}
+
 
 
 #define DO_HOOK(name_capital, name) do { \
@@ -205,6 +219,7 @@ Overview::Overview() : initialized(false)
     DO_HOOK(RenderSoftwareCursorsFor, renderSoftwareCursorsFor);
     DO_HOOK(GetMonitorFromVector, getMonitorFromVector);
     DO_HOOK(ClosestValid, closestValid);
+    DO_HOOK(RenderMonitor, renderMonitor);
 
     initialized = true;
 }
@@ -243,6 +258,11 @@ Overview::~Overview()
     if (g_pVisibleOnMonitorHook != nullptr) {
         /* bool success = */HyprlandAPI::removeFunctionHook(PHANDLE, g_pVisibleOnMonitorHook);
         g_pVisibleOnMonitorHook = nullptr;
+    }
+
+    if (g_pRenderMonitorHook != nullptr) {
+        /* bool success = */HyprlandAPI::removeFunctionHook(PHANDLE, g_pRenderMonitorHook);
+        g_pRenderMonitorHook = nullptr;
     }
 
     initialized = false;
@@ -325,7 +345,8 @@ bool Overview::enable_hooks()
         g_pLogicalBoxHook != nullptr && g_pLogicalBoxHook->hook() &&
         g_pRenderSoftwareCursorsForHook != nullptr && g_pRenderSoftwareCursorsForHook->hook() &&
         g_pClosestValidHook != nullptr && g_pClosestValidHook->hook() &&
-        g_pGetMonitorFromVectorHook != nullptr && g_pGetMonitorFromVectorHook->hook()) {
+        g_pGetMonitorFromVectorHook != nullptr && g_pGetMonitorFromVectorHook->hook() &&
+        g_pRenderMonitorHook != nullptr && g_pRenderMonitorHook->hook()) {
         return true;
     }
     return false;
@@ -342,5 +363,6 @@ void Overview::disable_hooks()
     if (g_pRenderSoftwareCursorsForHook != nullptr) g_pRenderSoftwareCursorsForHook->unhook();
     if (g_pClosestValidHook != nullptr) g_pClosestValidHook->unhook();
     if (g_pGetMonitorFromVectorHook != nullptr) g_pGetMonitorFromVectorHook->unhook();
+    if (g_pRenderMonitorHook != nullptr) g_pRenderMonitorHook->unhook();
 }
 

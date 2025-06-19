@@ -99,7 +99,6 @@ private:
     Box max;
     bool overview;
     eFullscreenMode preoverview_fsmode;
-    float preoverview_monitor_scale;
     int gap;
     Reorder reorder;
     Mode mode;
