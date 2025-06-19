@@ -1244,6 +1244,10 @@ void Row::toggle_overview()
             toggle_window_fullscreen_internal(window, preoverview_fsmode);
         }
     }
+
+    for (auto const& m : g_pCompositor->m_monitors) {
+        g_pHyprRenderer->damageMonitor(m);
+    }
 }
 
 void Row::update_windows(const Box &oldmax, bool force)
