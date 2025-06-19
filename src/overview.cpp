@@ -133,7 +133,49 @@ static Vector2D hookClosestValid(void *thisptr, const Vector2D& pos) {
 static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point) {
     CCompositor *compositor = static_cast<CCompositor *>(thisptr);
     // First, see if the current monitor contains the point
-    return compositor->m_lastMonitor.lock();
+    PHLMONITOR last = compositor->m_lastMonitor.lock();
+    PHLMONITOR mon;
+    for (auto const& m : compositor->m_monitors) {
+        WORKSPACEID workspace = m->activeSpecialWorkspaceID();
+        if (!workspace)
+            workspace = m->activeWorkspaceID();
+        auto data = overviews->data_for(workspace);
+        Vector2D m_size = data.overview ? m->m_size / data.scale : m->m_size;
+        // If the monitor contains the point
+        if (CBox{m->m_position, m_size}.containsPoint(point)) {
+            // Priority for last monitor
+            if (m == last) {
+                return last;
+            }
+            // Priority for monitor running overview
+            if (data.overview) {
+                mon = m;
+            } else if (!mon) {
+                mon = m;
+            }
+        }
+    }
+    if (mon)
+        return mon;
+
+    float      bestDistance = 0.f;
+    PHLMONITOR pBestMon;
+
+    for (auto const& m : compositor->m_monitors) {
+        float dist = vecToRectDistanceSquared(point, m->m_position, m->m_position + m->m_size);
+
+        if (dist < bestDistance || !pBestMon) {
+            bestDistance = dist;
+            pBestMon     = m;
+        }
+    }
+
+    if (!pBestMon) { // ?????
+        //Debug::log(WARN, "getMonitorFromVector no close mon???");
+        return compositor->m_monitors.front();
+    }
+
+    return pBestMon;
 }
 
 
