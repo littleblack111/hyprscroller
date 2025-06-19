@@ -63,6 +63,18 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
     if (overviews->overview_enabled(workspace)) {
+        const float scaling = 1.0 / monitor->m_scale;
+        Vector2D monitor_size = monitor->m_size;
+        float scale = monitor->m_scale;
+        monitor->m_size = monitor->m_size / scale;
+        SRenderModifData modif_data;
+        modif_data.modifs.push_back({SRenderModifData::eRenderModifType::RMOD_TYPE_SCALE, scaling});
+        modif_data.enabled = true;
+        g_pHyprRenderer->m_renderPass.add(makeShared<OverviewPassElement>(OverviewPassElement::OverviewModifData(modif_data)));
+        g_pHyprRenderer->damageMonitor(monitor);
+        ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups);
+        g_pHyprRenderer->m_renderPass.add(makeShared<OverviewPassElement>(OverviewPassElement::OverviewModifData(SRenderModifData())));
+        monitor->m_size = monitor_size;
         return;
     }
     ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups);
