@@ -77,6 +77,7 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
         monitor->m_size = monitor_size;
         return;
     }
+    g_pHyprRenderer->damageMonitor(monitor);
     ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups);
 }
 
