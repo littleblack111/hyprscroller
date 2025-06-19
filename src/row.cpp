@@ -4,6 +4,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
 #include <format>
 
 #include "common.h"
@@ -1144,12 +1145,15 @@ void Row::toggle_overview()
 {
     if (columns.size() == 0)
         return;
+    auto window = get_active_window();
+    if (!window || !window->m_workspace || !window->m_workspace->m_monitor)
+        return;
+    PHLMONITOR monitor = window->m_workspace->m_monitor.lock();
     overview = !overview;
     post_event("overview");
     static auto *const *overview_scale_content = (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:overview_scale_content")->getDataStaticPtr();
     if (overview) {
         // Turn off fullscreen mode if enabled
-        auto window = get_active_window();
         preoverview_fsmode = window_fullscreen_state(window);
         if (preoverview_fsmode != eFullscreenMode::FSMODE_NONE) {
             toggle_window_fullscreen_internal(window, preoverview_fsmode);
@@ -1180,8 +1184,10 @@ void Row::toggle_overview()
         } else {
             overview_scaled = false;
         }
+
+        Vector2D offset(0.5 * (max.w - w * scale), 0.5 * (max.h - h * scale));
+        preoverview_monitor_scale = monitor->m_scale;
         if (overview_scaled) {
-            Vector2D offset(0.5 * (max.w - w * scale), 0.5 * (max.h - h * scale));
             for (auto c = columns.first(); c != nullptr; c = c->next()) {
                 Column *col = c->data();
                 col->push_overview_geom();
@@ -1190,9 +1196,11 @@ void Row::toggle_overview()
             }
             adjust_overview_columns();
 
-            PHLMONITOR monitor = window->m_workspace->m_monitor.lock();
             monitor->m_scale *= scale;
+            g_pLayoutManager->getCurrentLayout()->recalculateMonitor(monitor->m_id);
             g_pHyprRenderer->damageMonitor(monitor);
+            g_pConfigManager->ensureVRR(monitor);
+            g_pCompositor->updateSuspendedStates();
 
             overviews->set_scale(workspace, scale);
         } else {
@@ -1210,12 +1218,12 @@ void Row::toggle_overview()
             overviews->set_scale(workspace, 1.0f);
         }
     } else {
-        if (**overview_scale_content && overviews->is_initialized()) {
-            PHLMONITOR monitor = get_active_window()->m_workspace->m_monitor.lock();
-            monitor->applyMonitorRule(&monitor->m_activeMonitorRule);
-            overviews->disable(workspace);
-            g_pHyprRenderer->damageMonitor(monitor);
-        }
+        monitor->m_scale = preoverview_monitor_scale;
+        overviews->disable(workspace);
+        g_pLayoutManager->getCurrentLayout()->recalculateMonitor(monitor->m_id);
+        g_pHyprRenderer->damageMonitor(monitor);
+        g_pConfigManager->ensureVRR(monitor);
+        g_pCompositor->updateSuspendedStates();
         for (auto c = columns.first(); c != nullptr; c = c->next()) {
             Column *col = c->data();
             col->pop_overview_geom();
