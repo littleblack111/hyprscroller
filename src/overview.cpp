@@ -180,69 +180,31 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
 }
 
 
+
+#define DO_HOOK(name_capital, name) do { \
+    auto FNS = HyprlandAPI::findFunctionsByName(PHANDLE, #name); \
+    if (!FNS.empty()) { \
+        g_p ## name_capital ## Hook = HyprlandAPI::createFunctionHook(PHANDLE, FNS[0].address, (bool *)hook ## name_capital); \
+        if (g_p ## name_capital ## Hook == nullptr) { \
+            Debug::log(WARN, "[hyprscroller] Overview: Hook of " #name " failed, function found but hook not successfull"); \
+            return; \
+        } \
+    } else { \
+        Debug::log(WARN, "[hyprscroller] Overview: Hook of " #name " failed, function not found"); \
+        return; \
+    } \
+} while (0)
+
+
 Overview::Overview() : initialized(false)
 {
     // Hook bool CWindow::visibleOnMonitor(PHLMONITOR pMonitor)
-    auto FNS1 = HyprlandAPI::findFunctionsByName(PHANDLE, "visibleOnMonitor");
-    if (!FNS1.empty()) {
-        g_pVisibleOnMonitorHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS1[0].address, (bool *)hookVisibleOnMonitor);
-        if (g_pVisibleOnMonitorHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    auto FNS3 = HyprlandAPI::findFunctionsByName(PHANDLE, "renderLayer");
-    if (!FNS3.empty()) {
-        g_pRenderLayerHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS3[0].address, (bool *)hookRenderLayer);
-        if (g_pRenderLayerHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    auto FNS5 = HyprlandAPI::findFunctionsByName(PHANDLE, "logicalBox");
-    if (!FNS5.empty()) {
-        g_pLogicalBoxHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS5[0].address, (bool *)hookLogicalBox);
-        if (g_pLogicalBoxHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    auto FNS6 = HyprlandAPI::findFunctionsByName(PHANDLE, "renderSoftwareCursorsFor");
-    if (!FNS5.empty()) {
-        g_pRenderSoftwareCursorsForHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS6[0].address, (bool *)hookRenderSoftwareCursorsFor);
-        if (g_pRenderSoftwareCursorsForHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    auto FNS7 =
-        HyprlandAPI::findFunctionsByName(PHANDLE, "getMonitorFromVector");
-    if (!FNS5.empty()) {
-        g_pGetMonitorFromVectorHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS7[0].address, (bool *)hookGetMonitorFromVector);
-        if (g_pGetMonitorFromVectorHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    auto FNS8 = HyprlandAPI::findFunctionsByName(PHANDLE, "closestValid");
-    if (!FNS5.empty()) {
-        g_pClosestValidHook = HyprlandAPI::createFunctionHook(PHANDLE, FNS8[0].address, (bool *)hookClosestValid);
-        if (g_pClosestValidHook == nullptr) {
-            return;
-        }
-    } else {
-        return;
-    }
+    DO_HOOK(VisibleOnMonitor, visibleOnMonitor);
+    DO_HOOK(RenderLayer, renderLayer);
+    DO_HOOK(LogicalBox, logicalBox);
+    DO_HOOK(RenderSoftwareCursorsFor, renderSoftwareCursorsFor);
+    DO_HOOK(GetMonitorFromVector, getMonitorFromVector);
+    DO_HOOK(ClosestValid, closestValid);
 
     initialized = true;
 }
