@@ -1185,13 +1185,13 @@ void Row::toggle_overview()
             overview_scaled = false;
         }
 
-        Vector2D offset(0.5 * (max.w - w * scale), 0.5 * (max.h - h * scale));
         if (overview_scaled) {
+            Vector2D offset(0.5 * (monitor->m_size.x - w * scale) / scale, 0.5 * (monitor->m_size.y - h * scale) / scale);
             for (auto c = columns.first(); c != nullptr; c = c->next()) {
                 Column *col = c->data();
                 col->push_overview_geom();
                 Vector2D cheight = col->get_height();
-                col->set_geom_pos(offset.x + max.x + (col->get_geom_x() - bmin.x), offset.y + max.y + (cheight.x - bmin.y));
+                col->set_geom_pos(offset.x + monitor->m_position.x + (col->get_geom_x() - bmin.x), offset.y + monitor->m_position.y + (cheight.x - bmin.y));
             }
             adjust_overview_columns();
 
