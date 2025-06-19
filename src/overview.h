@@ -15,15 +15,16 @@ public:
     void set_scale(WORKSPACEID workspace, float scale);
     float get_scale(WORKSPACEID workspace) const;
 
-private:
-    bool overview_enabled() const;
-    bool enable_hooks();
-    void disable_hooks();
-
     typedef struct {
         bool overview;
         float scale;
     } OverviewData;
+    OverviewData data_for(WORKSPACEID workspace) const;
+
+private:
+    bool overview_enabled() const;
+    bool enable_hooks();
+    void disable_hooks();
 
     bool initialized;
     std::unordered_map<WORKSPACEID, OverviewData> workspaces;

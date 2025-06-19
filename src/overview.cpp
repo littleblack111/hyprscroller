@@ -62,11 +62,11 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
-    if (overviews->overview_enabled(workspace)) {
-        const float scaling = 1.0 / monitor->m_scale;
+    auto data = overviews->data_for(workspace);
+    if (data.overview) {
+        const float scaling = 1.0 / data.scale;
         Vector2D monitor_size = monitor->m_size;
-        float scale = monitor->m_scale;
-        monitor->m_size = monitor->m_size / scale;
+        monitor->m_size = monitor->m_size / data.scale;
         SRenderModifData modif_data;
         modif_data.modifs.push_back({SRenderModifData::eRenderModifType::RMOD_TYPE_SCALE, scaling});
         modif_data.enabled = true;
@@ -101,7 +101,7 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
         if (!workspace)
             workspace = monitor->activeWorkspaceID();
         Vector2D monitor_size = monitor->m_size;
-        float scale = monitor->m_scale;
+        float scale = overviews->get_scale(workspace);
         monitor->m_size = monitor->m_size / scale;
         g_pHyprRenderer->damageMonitor(monitor);
         ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
@@ -292,6 +292,15 @@ float Overview::get_scale(WORKSPACEID workspace) const
         return enabled->second.scale;
     }
     return 1.0f;
+}
+
+Overview::OverviewData Overview::data_for(WORKSPACEID workspace) const
+{
+    auto enabled = workspaces.find(workspace);
+    if (enabled != workspaces.end()) {
+        return enabled->second;
+    }
+    return {};
 }
 
 bool Overview::overview_enabled() const
