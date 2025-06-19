@@ -4,6 +4,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <format>
 
 #include "common.h"
 #include "functions.h"
@@ -1185,17 +1186,15 @@ void Row::toggle_overview()
                 Column *col = c->data();
                 col->push_overview_geom();
                 Vector2D cheight = col->get_height();
-                col->set_geom_pos(full.x + (max.x - full.x + offset.x) / scale + (col->get_geom_x() - bmin.x), full.y + (max.y - full.y + offset.y) / scale + (cheight.x - bmin.y));
+                col->set_geom_pos(offset.x + max.x + (col->get_geom_x() - bmin.x), offset.y + max.y + (cheight.x - bmin.y));
             }
             adjust_overview_columns();
 
             PHLMONITOR monitor = window->m_workspace->m_monitor.lock();
+            monitor->m_scale *= scale;
             g_pHyprRenderer->damageMonitor(monitor);
 
             overviews->set_scale(workspace, scale);
-            overviews->set_vecsize(workspace, monitor->m_size);
-            // Update cursor
-            get_active_window()->warpCursor();
         } else {
             Vector2D offset(0.5 * (max.w - w * scale), 0.5 * (max.h - h * scale));
             for (auto c = columns.first(); c != nullptr; c = c->next()) {
@@ -1208,10 +1207,12 @@ void Row::toggle_overview()
                 col->scale(bmin, start, scale, gap);
             }
             adjust_overview_columns();
+            overviews->set_scale(workspace, 1.0f);
         }
     } else {
         if (**overview_scale_content && overviews->is_initialized()) {
             PHLMONITOR monitor = get_active_window()->m_workspace->m_monitor.lock();
+            monitor->applyMonitorRule(&monitor->m_activeMonitorRule);
             overviews->disable(workspace);
             g_pHyprRenderer->damageMonitor(monitor);
         }

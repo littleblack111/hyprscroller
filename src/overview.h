@@ -12,9 +12,7 @@ public:
     bool enable(WORKSPACEID workspace);
     void disable(WORKSPACEID workspace);
     bool overview_enabled(WORKSPACEID workspace) const;
-    void set_vecsize(WORKSPACEID workspace, const Vector2D &size);
     void set_scale(WORKSPACEID workspace, float scale);
-    Vector2D get_vecsize(WORKSPACEID workspace) const;
     float get_scale(WORKSPACEID workspace) const;
 
 private:
@@ -24,7 +22,6 @@ private:
 
     typedef struct {
         bool overview;
-        Vector2D vecsize;
         float scale;
     } OverviewData;
 
