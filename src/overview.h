@@ -2,7 +2,7 @@
 #define SCROLLER_OVERVIEW_H
 
 #include <hyprland/src/SharedDefs.hpp>
-#include <unordered_map>
+#include <vector>
 
 class Overview {
 public:
@@ -13,9 +13,9 @@ public:
     void disable(WORKSPACEID workspace);
     bool overview_enabled(WORKSPACEID workspace) const;
     void set_scale(WORKSPACEID workspace, float scale);
-    float get_scale(WORKSPACEID workspace) const;
 
     typedef struct {
+	WORKSPACEID workspace;
         bool overview;
         float scale;
     } OverviewData;
@@ -27,7 +27,7 @@ private:
     void disable_hooks();
 
     bool initialized;
-    std::unordered_map<WORKSPACEID, OverviewData> workspaces;
+    std::vector<OverviewData> _workspaceData;
 };
 
 #endif // SCROLLER_OVERVIEW_H

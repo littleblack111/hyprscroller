@@ -88,7 +88,10 @@ static CBox hookLogicalBox(CMonitor *thisptr) {
     WORKSPACEID workspace = thisptr->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = thisptr->activeWorkspaceID();
-    return {thisptr->m_position, thisptr->m_size / overviews->get_scale(workspace)};
+    auto data = overviews->data_for(workspace);
+    if (data.overview)
+        return {thisptr->m_position, thisptr->m_size / data.scale};
+    return ((origLogicalBox)(g_pLogicalBoxHook->m_original))(thisptr);
 }
 
 // Needed to render the software cursor only on the correct monitors.
@@ -103,9 +106,9 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
         WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
         if (!workspace)
             workspace = monitor->activeWorkspaceID();
+        auto data = overviews->data_for(workspace);
         Vector2D monitor_size = monitor->m_size;
-        float scale = overviews->get_scale(workspace);
-        monitor->m_size = monitor->m_size / scale;
+        monitor->m_size = monitor->m_size / data.scale;
         g_pHyprRenderer->damageMonitor(monitor);
         ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
         monitor->m_size = monitor_size;
@@ -276,7 +279,13 @@ bool Overview::enable(WORKSPACEID workspace)
         if (!enable_hooks())
             return false;
     }
-    workspaces[workspace].overview = true;
+    for (auto &w : _workspaceData) {
+        if (w.workspace == workspace) {
+            w.overview = true;
+            return true;
+        }
+    }
+    _workspaceData.push_back({.workspace=workspace,.overview=true,.scale=1.0f});
     return true;
 }
 
@@ -284,8 +293,12 @@ void Overview::disable(WORKSPACEID workspace)
 {
     if (!initialized)
         return;
-    workspaces[workspace].overview = false;
-    workspaces[workspace].scale = 1.0f;
+    for (auto &w : _workspaceData) {
+        if (w.workspace == workspace) {
+            w.overview = false;
+            w.scale = 1.0f;
+        }
+    }
     if (!overview_enabled()) {
         disable_hooks();
     }
@@ -295,43 +308,37 @@ bool Overview::overview_enabled(WORKSPACEID workspace) const
 {
     if (!initialized)
         return false;
-    auto enabled = workspaces.find(workspace);
-    if (enabled != workspaces.end()) {
-        return enabled->second.overview;
+    for (auto &w : _workspaceData) {
+        if (w.workspace == workspace)
+            return w.overview;
     }
     return false;
 }
 
 void Overview::set_scale(WORKSPACEID workspace, float scale)
 {
-    auto enabled = workspaces.find(workspace);
-    if (enabled != workspaces.end()) {
-        enabled->second.scale = scale;
+    for (auto &w : _workspaceData) {
+        if (w.workspace == workspace) {
+            w.scale = scale;
+            return;
+        }
     }
-}
-
-float Overview::get_scale(WORKSPACEID workspace) const
-{
-    auto enabled = workspaces.find(workspace);
-    if (enabled != workspaces.end()) {
-        return enabled->second.scale;
-    }
-    return 1.0f;
+    _workspaceData.push_back({.workspace=workspace,.scale=scale});
 }
 
 Overview::OverviewData Overview::data_for(WORKSPACEID workspace) const
 {
-    auto enabled = workspaces.find(workspace);
-    if (enabled != workspaces.end()) {
-        return enabled->second;
+    for (auto &w : _workspaceData) {
+        if (w.workspace == workspace)
+            return w;
     }
-    return {};
+    return {.scale=1.0f};
 }
 
 bool Overview::overview_enabled() const
 {
-    for (auto workspace : workspaces) {
-        if (workspace.second.overview)
+    for (auto &workspace : _workspaceData) {
+        if (workspace.overview)
             return true;
     }
     return false;
