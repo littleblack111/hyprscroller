@@ -14,6 +14,7 @@ inline CFunctionHook* g_pRenderSoftwareCursorsForHook = nullptr;
 inline CFunctionHook* g_pGetMonitorFromVectorHook = nullptr;
 inline CFunctionHook* g_pClosestValidHook = nullptr;
 inline CFunctionHook* g_pRenderMonitorHook = nullptr;
+inline CFunctionHook* g_pGetCursorPosForMonitorHook = nullptr;
 
 Overview *overviews = nullptr;
 
@@ -24,6 +25,7 @@ typedef void (*origRenderSoftwareCursorsFor)(void *thisptr, PHLMONITOR pMonitor,
 typedef Vector2D (*origClosestValid)(void *thisptr, const Vector2D &pos);
 typedef PHLMONITOR (*origGetMonitorFromVector)(void *thisptr, const Vector2D& point);
 typedef void (*origRenderMonitor)(CHyprRenderer *thisptr, PHLMONITOR pMonitor);
+typedef Vector2D (*origGetCursorPosForMonitor)(void *thisptr, PHLMONITOR pMonitor);
 
 class OverviewPassElement : public IPassElement {
 public:
@@ -195,6 +197,11 @@ static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
     monitor->m_scale = scale;
 }
 
+static Vector2D hookGetCursorPosForMonitor(void *thisptr, PHLMONITOR monitor) {
+    Debug::log(WARN, "Your setup seems to use HW cursors, which are currently not tested with hyprscroller, please report as an issue on https://github.com/cpiber/hyprscroller/");
+    return ((origGetCursorPosForMonitor)(g_pGetCursorPosForMonitorHook->m_original))(thisptr, monitor);
+}
+
 
 
 #define DO_HOOK(name_capital, name) do { \
@@ -222,6 +229,7 @@ Overview::Overview() : initialized(false)
     DO_HOOK(GetMonitorFromVector, getMonitorFromVector);
     DO_HOOK(ClosestValid, closestValid);
     DO_HOOK(RenderMonitor, renderMonitor);
+    DO_HOOK(GetCursorPosForMonitor, getCursorPosForMonitor);
 
     initialized = true;
 }
@@ -265,6 +273,11 @@ Overview::~Overview()
     if (g_pRenderMonitorHook != nullptr) {
         /* bool success = */HyprlandAPI::removeFunctionHook(PHANDLE, g_pRenderMonitorHook);
         g_pRenderMonitorHook = nullptr;
+    }
+
+    if (g_pGetCursorPosForMonitorHook != nullptr) {
+        /* bool success = */HyprlandAPI::removeFunctionHook(PHANDLE, g_pGetCursorPosForMonitorHook);
+        g_pGetCursorPosForMonitorHook = nullptr;
     }
 
     initialized = false;
@@ -354,7 +367,8 @@ bool Overview::enable_hooks()
         g_pRenderSoftwareCursorsForHook != nullptr && g_pRenderSoftwareCursorsForHook->hook() &&
         g_pClosestValidHook != nullptr && g_pClosestValidHook->hook() &&
         g_pGetMonitorFromVectorHook != nullptr && g_pGetMonitorFromVectorHook->hook() &&
-        g_pRenderMonitorHook != nullptr && g_pRenderMonitorHook->hook()) {
+        g_pRenderMonitorHook != nullptr && g_pRenderMonitorHook->hook() &&
+        g_pGetCursorPosForMonitorHook != nullptr && g_pGetCursorPosForMonitorHook->hook()) {
         return true;
     }
     return false;
@@ -372,5 +386,6 @@ void Overview::disable_hooks()
     if (g_pClosestValidHook != nullptr) g_pClosestValidHook->unhook();
     if (g_pGetMonitorFromVectorHook != nullptr) g_pGetMonitorFromVectorHook->unhook();
     if (g_pRenderMonitorHook != nullptr) g_pRenderMonitorHook->unhook();
+    if (g_pGetCursorPosForMonitorHook != nullptr) g_pGetCursorPosForMonitorHook->unhook();
 }
 
