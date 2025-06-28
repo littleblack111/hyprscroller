@@ -18,6 +18,7 @@ public:
 	WORKSPACEID workspace;
         bool overview;
         float scale;
+        float scale_i; // inverse scale
     } OverviewData;
     OverviewData data_for(WORKSPACEID workspace) const;
 

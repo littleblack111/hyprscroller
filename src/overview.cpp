@@ -66,11 +66,10 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
         workspace = monitor->activeWorkspaceID();
     auto data = overviews->data_for(workspace);
     if (data.overview) {
-        const float scaling = 1.0 / data.scale;
         Vector2D monitor_size = monitor->m_size;
-        monitor->m_size = monitor->m_size / data.scale;
+        monitor->m_size = monitor->m_size * data.scale_i;
         SRenderModifData modif_data;
-        modif_data.modifs.push_back({SRenderModifData::eRenderModifType::RMOD_TYPE_SCALE, scaling});
+        modif_data.modifs.push_back({SRenderModifData::eRenderModifType::RMOD_TYPE_SCALE, data.scale_i});
         modif_data.enabled = true;
         g_pHyprRenderer->m_renderPass.add(makeShared<OverviewPassElement>(OverviewPassElement::OverviewModifData(modif_data)));
         g_pHyprRenderer->damageMonitor(monitor);
@@ -90,7 +89,7 @@ static CBox hookLogicalBox(CMonitor *thisptr) {
         workspace = thisptr->activeWorkspaceID();
     auto data = overviews->data_for(workspace);
     if (data.overview)
-        return {thisptr->m_position, thisptr->m_size / data.scale};
+        return {thisptr->m_position, thisptr->m_size * data.scale_i};
     return ((origLogicalBox)(g_pLogicalBoxHook->m_original))(thisptr);
 }
 
@@ -108,7 +107,7 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
             workspace = monitor->activeWorkspaceID();
         auto data = overviews->data_for(workspace);
         Vector2D monitor_size = monitor->m_size;
-        monitor->m_size = monitor->m_size / data.scale;
+        monitor->m_size = monitor->m_size * data.scale_i;
         g_pHyprRenderer->damageMonitor(monitor);
         ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
         monitor->m_size = monitor_size;
@@ -146,7 +145,7 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
         if (!workspace)
             workspace = m->activeWorkspaceID();
         auto data = overviews->data_for(workspace);
-        Vector2D m_size = data.overview ? m->m_size / data.scale : m->m_size;
+        Vector2D m_size = data.overview ? m->m_size * data.scale_i : m->m_size;
         // If the monitor contains the point
         if (CBox{m->m_position, m_size}.containsPoint(point)) {
             // Priority for last monitor
@@ -285,7 +284,7 @@ bool Overview::enable(WORKSPACEID workspace)
             return true;
         }
     }
-    _workspaceData.push_back({.workspace=workspace,.overview=true,.scale=1.0f});
+    _workspaceData.push_back({.workspace=workspace,.overview=true,.scale=1.0f,.scale_i=1.0f});
     return true;
 }
 
@@ -297,6 +296,7 @@ void Overview::disable(WORKSPACEID workspace)
         if (w.workspace == workspace) {
             w.overview = false;
             w.scale = 1.0f;
+            w.scale_i = 1.0f;
         }
     }
     if (!overview_enabled()) {
@@ -320,10 +320,11 @@ void Overview::set_scale(WORKSPACEID workspace, float scale)
     for (auto &w : _workspaceData) {
         if (w.workspace == workspace) {
             w.scale = scale;
+            w.scale_i = 1.0f / scale;
             return;
         }
     }
-    _workspaceData.push_back({.workspace=workspace,.scale=scale});
+    _workspaceData.push_back({.workspace=workspace,.scale=scale,.scale_i=1.0f/scale});
 }
 
 Overview::OverviewData Overview::data_for(WORKSPACEID workspace) const
@@ -332,7 +333,7 @@ Overview::OverviewData Overview::data_for(WORKSPACEID workspace) const
         if (w.workspace == workspace)
             return w;
     }
-    return {.scale=1.0f};
+    return {.scale=1.0f,.scale_i=1.0f};
 }
 
 bool Overview::overview_enabled() const
