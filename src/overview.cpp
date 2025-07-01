@@ -63,6 +63,9 @@ static bool hookVisibleOnMonitor(void *thisptr, PHLMONITOR monitor) {
 
 // Needed to undo the monitor scale to render layers at the original scale
 static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, timespec* time, bool popups) {
+    static auto* const *ENABLE_RENDER = (Hyprlang::INT* const *)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:overview_render_layers")->getDataStaticPtr();
+    if (!**ENABLE_RENDER)
+        return;
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();

@@ -964,20 +964,26 @@ arguments are: `false`|`0` (default), or `true`|`1`.
 
 ### `center_active_column`
 
-It `true`, the active column will always be centered on the screen. Possible
+If `true`, the active column will always be centered on the screen. Possible
 values for the argument are: `false`|`0` (default), or `true`|`1`.
 
 ### `center_active_window`
 
-It `true`, the active window (active window of the active column) will always
+If `true`, the active window (active window of the active column) will always
 be centered on the screen. Possible values for the argument are:
 `false`|`0` (default), or `true`|`1`.
 
 ### `overview_scale_content`
 
-Scales the content of the windows in overview mode, like GNOME/MacOS/Windows
-overview mode. Possible arguments are: `true`|`1` (default), or
+If true, scales the content of the windows in overview mode, like gnome/macos/windows
+overview mode. Possible values argument for the argument are: `true`|`1` (default), or
 `false`|`0`.
+
+### `overview_render_layers`
+
+If true, layers (e.g. background layer like `hyprpaper`) are rendered in overview
+mode. Disable if rendering is glitchy (see [#7](https://github.com/cpiber/hyprscroller/issues/7)).
+Possible values for the argument are: `true`|`1` (default), or `false`|`0`.
 
 ### `col.selection_border`
 
