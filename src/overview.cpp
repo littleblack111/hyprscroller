@@ -197,9 +197,21 @@ static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
     monitor->m_scale = scale;
 }
 
+// Needed to render the HW cursor at the right position
 static Vector2D hookGetCursorPosForMonitor(void *thisptr, PHLMONITOR monitor) {
-    Debug::log(WARN, "Your setup seems to use HW cursors, which are currently not tested with hyprscroller, please report as an issue on https://github.com/cpiber/hyprscroller/");
-    return ((origGetCursorPosForMonitor)(g_pGetCursorPosForMonitorHook->m_original))(thisptr, monitor);
+    if (g_pCompositor->m_lastMonitor.lock() != monitor)
+        return { 0.0, monitor->m_size.y };
+
+    WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
+    if (!workspace)
+        workspace = monitor->activeWorkspaceID();
+    auto data = overviews->data_for(workspace);
+    auto monitor_scale = monitor->m_scale;
+    if (data.overview)
+        monitor->m_scale *= data.scale;
+    Vector2D pos = ((origGetCursorPosForMonitor)(g_pGetCursorPosForMonitorHook->m_original))(thisptr, monitor);
+    monitor->m_scale = monitor_scale;
+    return pos;
 }
 
 
