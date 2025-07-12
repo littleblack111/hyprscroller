@@ -24,7 +24,7 @@ typedef CBox (*origLogicalBox)(CMonitor *thisptr);
 typedef void (*origRenderSoftwareCursorsFor)(void *thisptr, PHLMONITOR pMonitor, timespec* now, CRegion& damage, std::optional<Vector2D> overridePos);
 typedef Vector2D (*origClosestValid)(void *thisptr, const Vector2D &pos);
 typedef PHLMONITOR (*origGetMonitorFromVector)(void *thisptr, const Vector2D& point);
-typedef void (*origRenderMonitor)(CHyprRenderer *thisptr, PHLMONITOR pMonitor);
+typedef void (*origRenderMonitor)(CHyprRenderer *thisptr, PHLMONITOR pMonitor, bool commit);
 typedef Vector2D (*origGetCursorPosForMonitor)(void *thisptr, PHLMONITOR pMonitor);
 
 class OverviewPassElement : public IPassElement {
@@ -185,7 +185,7 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
     return pBestMon;
 }
 
-static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
+static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor, bool commit) {
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
@@ -193,7 +193,7 @@ static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
     float scale = monitor->m_scale;
     if (data.overview)
         monitor->m_scale *= data.scale;
-    ((origRenderMonitor)(g_pRenderMonitorHook->m_original))(thisptr, monitor);
+    ((origRenderMonitor)(g_pRenderMonitorHook->m_original))(thisptr, monitor, commit);
     monitor->m_scale = scale;
 }
 
