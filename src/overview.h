@@ -20,7 +20,7 @@ public:
         float scale;
         float scale_i; // inverse scale
     } OverviewData;
-    OverviewData data_for(WORKSPACEID workspace) const;
+    OverviewData& data_for(WORKSPACEID workspace);
 
 private:
     bool overview_enabled() const;

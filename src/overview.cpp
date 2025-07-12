@@ -69,7 +69,7 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
-    auto data = overviews->data_for(workspace);
+    auto &data = overviews->data_for(workspace);
     if (data.overview) {
         Vector2D monitor_size = monitor->m_size;
         monitor->m_size = monitor->m_size * data.scale_i;
@@ -91,14 +91,13 @@ static CBox hookLogicalBox(CMonitor *thisptr) {
     WORKSPACEID workspace = thisptr->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = thisptr->activeWorkspaceID();
-    auto data = overviews->data_for(workspace);
+    auto &data = overviews->data_for(workspace);
     if (data.overview)
         return {thisptr->m_position, thisptr->m_size * data.scale_i};
     return ((origLogicalBox)(g_pLogicalBoxHook->m_original))(thisptr);
 }
 
 // Needed to render the software cursor only on the correct monitors.
-// TODO: what about hardware cursor?
 static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, timespec* now, CRegion& damage, std::optional<Vector2D> overridePos) {
     // Should render the cursor for all the extent of the workspace, and only on
     // overview workspaces when there is one active, and it is in the current monitor.
@@ -109,7 +108,7 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
         WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
         if (!workspace)
             workspace = monitor->activeWorkspaceID();
-        auto data = overviews->data_for(workspace);
+        auto &data = overviews->data_for(workspace);
         Vector2D monitor_size = monitor->m_size;
         monitor->m_size = monitor->m_size * data.scale_i;
         ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
@@ -147,7 +146,7 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
         WORKSPACEID workspace = m->activeSpecialWorkspaceID();
         if (!workspace)
             workspace = m->activeWorkspaceID();
-        auto data = overviews->data_for(workspace);
+        auto &data = overviews->data_for(workspace);
         Vector2D m_size = data.overview ? m->m_size * data.scale_i : m->m_size;
         // If the monitor contains the point
         if (CBox{m->m_position, m_size}.containsPoint(point)) {
@@ -190,8 +189,8 @@ static void hookRenderMonitor(CHyprRenderer *thisptr, PHLMONITOR monitor) {
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
+    auto &data = overviews->data_for(workspace);
     float scale = monitor->m_scale;
-    auto data = overviews->data_for(workspace);
     if (data.overview)
         monitor->m_scale *= data.scale;
     ((origRenderMonitor)(g_pRenderMonitorHook->m_original))(thisptr, monitor);
@@ -206,7 +205,7 @@ static Vector2D hookGetCursorPosForMonitor(void *thisptr, PHLMONITOR monitor) {
     WORKSPACEID workspace = monitor->activeSpecialWorkspaceID();
     if (!workspace)
         workspace = monitor->activeWorkspaceID();
-    auto data = overviews->data_for(workspace);
+    auto &data = overviews->data_for(workspace);
     auto monitor_scale = monitor->m_scale;
     if (data.overview)
         monitor->m_scale *= data.scale;
@@ -353,13 +352,14 @@ void Overview::set_scale(WORKSPACEID workspace, float scale)
     _workspaceData.push_back({.workspace=workspace,.scale=scale,.scale_i=1.0f/scale});
 }
 
-Overview::OverviewData Overview::data_for(WORKSPACEID workspace) const
+Overview::OverviewData& Overview::data_for(WORKSPACEID workspace)
 {
     for (auto &w : _workspaceData) {
         if (w.workspace == workspace)
             return w;
     }
-    return {.scale=1.0f,.scale_i=1.0f};
+    _workspaceData.push_back({.workspace=workspace,.scale=1.0f,.scale_i=1.0f});
+    return _workspaceData.back();
 }
 
 bool Overview::overview_enabled() const
