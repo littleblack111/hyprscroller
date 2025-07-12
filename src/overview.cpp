@@ -19,9 +19,9 @@ inline CFunctionHook* g_pGetCursorPosForMonitorHook = nullptr;
 Overview *overviews = nullptr;
 
 typedef bool (*origVisibleOnMonitor)(void *thisptr, PHLMONITOR monitor);
-typedef void (*origRenderLayer)(void *thisptr, PHLLS pLayer, PHLMONITOR pMonitor, timespec* time, bool popups);
+typedef void (*origRenderLayer)(void *thisptr, PHLLS pLayer, PHLMONITOR pMonitor, const Time::steady_tp&, bool popups, bool lockscreen);
 typedef CBox (*origLogicalBox)(CMonitor *thisptr);
-typedef void (*origRenderSoftwareCursorsFor)(void *thisptr, PHLMONITOR pMonitor, timespec* now, CRegion& damage, std::optional<Vector2D> overridePos);
+typedef void (*origRenderSoftwareCursorsFor)(void *thisptr, PHLMONITOR pMonitor, const Time::steady_tp& now, CRegion& damage, std::optional<Vector2D> overridePos, bool forceRender);
 typedef Vector2D (*origClosestValid)(void *thisptr, const Vector2D &pos);
 typedef PHLMONITOR (*origGetMonitorFromVector)(void *thisptr, const Vector2D& point);
 typedef void (*origRenderMonitor)(CHyprRenderer *thisptr, PHLMONITOR pMonitor, bool commit);
@@ -62,7 +62,7 @@ static bool hookVisibleOnMonitor(void *thisptr, PHLMONITOR monitor) {
 }
 
 // Needed to undo the monitor scale to render layers at the original scale
-static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, timespec* time, bool popups) {
+static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, const Time::steady_tp& time, bool popups, bool lockscreen) {
     static auto* const *ENABLE_RENDER = (Hyprlang::INT* const *)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:overview_render_layers")->getDataStaticPtr();
     if (!**ENABLE_RENDER)
         return;
@@ -78,12 +78,12 @@ static void hookRenderLayer(void *thisptr, PHLLS layer, PHLMONITOR monitor, time
         modif_data.enabled = true;
         g_pHyprRenderer->m_renderPass.add(makeUnique<OverviewPassElement>(OverviewPassElement::OverviewModifData(modif_data)));
         g_pHyprRenderer->damageMonitor(monitor);
-        ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups);
+        ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups, lockscreen);
         g_pHyprRenderer->m_renderPass.add(makeUnique<OverviewPassElement>(OverviewPassElement::OverviewModifData(SRenderModifData())));
         monitor->m_size = monitor_size;
         return;
     }
-    ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups);
+    ((origRenderLayer)(g_pRenderLayerHook->m_original))(thisptr, layer, monitor, time, popups, lockscreen);
 }
 
 // Needed to scale the range of the cursor in overview mode to cover the whole area.
@@ -98,7 +98,7 @@ static CBox hookLogicalBox(CMonitor *thisptr) {
 }
 
 // Needed to render the software cursor only on the correct monitors.
-static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, timespec* now, CRegion& damage, std::optional<Vector2D> overridePos) {
+static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, const Time::steady_tp& now, CRegion& damage, std::optional<Vector2D> overridePos, bool forceRender) {
     // Should render the cursor for all the extent of the workspace, and only on
     // overview workspaces when there is one active, and it is in the current monitor.
     PHLMONITOR last = g_pCompositor->m_lastMonitor.lock();
@@ -111,7 +111,7 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
         auto &data = overviews->data_for(workspace);
         Vector2D monitor_size = monitor->m_size;
         monitor->m_size = monitor->m_size * data.scale_i;
-        ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
+        ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos, forceRender);
         monitor->m_size = monitor_size;
     }
 }
