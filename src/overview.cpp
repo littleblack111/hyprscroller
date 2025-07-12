@@ -303,13 +303,8 @@ bool Overview::enable(WORKSPACEID workspace)
         if (!enable_hooks())
             return false;
     }
-    for (auto &w : _workspaceData) {
-        if (w.workspace == workspace) {
-            w.overview = true;
-            return true;
-        }
-    }
-    _workspaceData.push_back({.workspace=workspace,.overview=true,.scale=1.0f,.scale_i=1.0f});
+    auto &data = data_for(workspace);
+    data.overview = true;
     return true;
 }
 
@@ -342,14 +337,9 @@ bool Overview::overview_enabled(WORKSPACEID workspace) const
 
 void Overview::set_scale(WORKSPACEID workspace, float scale)
 {
-    for (auto &w : _workspaceData) {
-        if (w.workspace == workspace) {
-            w.scale = scale;
-            w.scale_i = 1.0f / scale;
-            return;
-        }
-    }
-    _workspaceData.push_back({.workspace=workspace,.scale=scale,.scale_i=1.0f/scale});
+    auto &data = data_for(workspace);
+    data.scale = scale;
+    data.scale_i = 1.0f / scale;
 }
 
 Overview::OverviewData& Overview::data_for(WORKSPACEID workspace)
