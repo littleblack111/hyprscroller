@@ -112,7 +112,6 @@ static void hookRenderSoftwareCursorsFor(void *thisptr, PHLMONITOR monitor, time
         auto data = overviews->data_for(workspace);
         Vector2D monitor_size = monitor->m_size;
         monitor->m_size = monitor->m_size * data.scale_i;
-        g_pHyprRenderer->damageMonitor(monitor);
         ((origRenderSoftwareCursorsFor)(g_pRenderSoftwareCursorsForHook->m_original))(thisptr, monitor, now, damage, overridePos);
         monitor->m_size = monitor_size;
     }
