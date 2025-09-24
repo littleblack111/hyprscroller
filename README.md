@@ -704,15 +704,13 @@ that.
 plugin to tweak gestures behavior. You can find them in the **Options** section
 of this document.
 
-**Note**: Hyprland's `workspace_swipe` will be disabled while using
-*hyprscroller*. Please, use the provided workspace change swipe gesture (four
+**Note**: Hyprland also supports workspace changes using gestures. Instead,
+please, use the provided workspace change swipe gesture (four
 fingers right/left by default, but you can change the number of fingers).
 
 Hyprland doesn't understand windows in a workspace can exist outside of the viewport, so
 `workspace_swipe` will not work, as it renders those windows thinking they are in
-a different workspace, creating a small mess of windows. If you have forgotten
-to disable it, *hyprscroller* will have to turn off three finger gestures until
-you disable `workspace_swipe`.
+a different workspace, creating a small mess of windows.
 
 
 ## IPC
