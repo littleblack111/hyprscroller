@@ -28,11 +28,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_ScrollerLayout = std::make_unique<ScrollerLayout>();
     g_ScrollerLayout->ruleGroupIdx        = Desktop::Rule::windowEffects()->registerEffect("scroller:group");
-    g_ScrollerLayout->ruleAlignWindowIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:alignwindow");
-    g_ScrollerLayout->ruleMarksAddIdx     = Desktop::Rule::windowEffects()->registerEffect("scroller:marksadd");
-    g_ScrollerLayout->ruleColumnWidthIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:columnwidth");
-    g_ScrollerLayout->ruleWindowHeightIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:windowheight");
-    g_ScrollerLayout->ruleModeModifierIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:modemodifier");
+    g_ScrollerLayout->ruleAlignWindowIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:align_window");
+    g_ScrollerLayout->ruleMarksAddIdx     = Desktop::Rule::windowEffects()->registerEffect("scroller:marks_add");
+    g_ScrollerLayout->ruleColumnWidthIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:column_width");
+    g_ScrollerLayout->ruleWindowHeightIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:window_height");
+    g_ScrollerLayout->ruleModeModifierIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:mode_modifier");
 
     HyprlandAPI::addLayout(PHANDLE, "scroller", g_ScrollerLayout.get());
 

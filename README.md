@@ -608,7 +608,7 @@ to a pinned column. You can use this tag to create window rules affecting
 these windows. For example, to change their border colors:
 
 ```
-windowrulev2 = bordercolor rgb(eeee00) rgb(00eeee), tag: scroller:pinned
+windowrule = border_color rgb(eeee00) rgb(00eeee), match:tag scroller:pinned
 ```
 
 
@@ -1261,13 +1261,13 @@ Use this rule when you want to open a certain window overriding the current
 mode or its modifiers. This doesn't change the mode or its modifiers, it only
 affects the window matching the rule.
 
-**Syntax of rule:** `plugin:scroller:modemodifier row|column after|before|end|beginning focus|nofocus`
+**Syntax of rule:** `scroller:mode_modifier row|column after|before|end|beginning focus|nofocus`
 
 For example, the following rule will always open kitty windows in column mode,
 before the active window and won't focus on the new window.
 
 ```
-windowrulev2 = plugin:scroller:modemodifier col before nofocus, class:(kitty)
+windowrule = scroller:mode_modifier col before nofocus, match:class ^(kitty)$
 ```
 
 
@@ -1278,10 +1278,10 @@ column. For example, in [#45](https://github.com/dawsers/hyprscroller/issues/45)
 a user wants to open all the plot windows for a Python script in the same
 column.
 
-**Syntax of rule:** `plugin:scroller:group group_name`
+**Syntax of rule:** `scroller:group group_name`
 
 ```
-windowrulev2 = plugin:scroller:group python_plots, class:(python3)
+windowrule = scroller:group python_plots, match:class ^(python3)$
 ```
 
 #### alignwindow
@@ -1289,50 +1289,50 @@ windowrulev2 = plugin:scroller:group python_plots, class:(python3)
 Aligns the new opened window. Works in the same way as the `alignwindow`
 dispatcher.
 
-**Syntax of rule:** `plugin:scroller:alignwindow position`
+**Syntax of rule:** `scroller:align_window position`
 
 Center any new Firefox window.
 
 ```
-windowrulev2 = plugin:scroller:alignwindow center, class:(firefox)
+windowrule = scroller:align_window center, match:class ^(firefox)$
 ```
 
 #### marksadd
 
 Add a named mark to a window.
 
-**Syntax of rule:** `plugin:scroller:marksadd name`
+**Syntax of rule:** `scroller:marks_add name`
 
 Add a mark named `m` to Thunderbird's main window as soon as it's opened. This
 will let you navigate to Thunderbird from wherever you are by using a
 `marksvisit` key binding. I use `Super + ' + m` to set the focus on Thunderbird.
 
 ```
-windowrulev2 = plugin:scroller:marksadd m, class:(thunderbird),title:(Mozilla Thunderbird)$
+windowrule = scroller:marks_add m, match:class ^(thunderbird)$, match:title (Mozilla Thunderbird)$
 ```
 
 #### columnwidth
 
 Overrides the default width of the column containing the window.
 
-**Syntax of rule:** `plugin:scroller:columnwidth width`
+**Syntax of rule:** `scroller:column_width width`
 
 Open any Firefox window with a width of `twothirds`
 
 ```
-windowrulev2 = plugin:scroller:columnwidth twothirds, class:(firefox)
+windowrule = scroller:column_width twothirds, match:class ^(firefox)$
 ```
 
 #### windowheight
 
 Overrides the default height of the new window.
 
-**Syntax of rule:** `plugin:scroller:windowheight height`
+**Syntax of rule:** `plugin:scroller:window_height height`
 
 Open any Firefox window with a height of `onehalf`
 
 ```
-windowrulev2 = plugin:scroller:windowheight onehalf, class:(firefox)
+windowrule = scroller:window_height onehalf, match:class ^(firefox)$
 ```
 
 ### Hyprscroller Properties for Window Rules
@@ -1346,7 +1346,7 @@ Windows belonging to a pinned column are tagged `scroller:pinned`. You can use
 this tag to modify their behavior. For example, to change their border colors:
 
 ```
-windowrulev2 = bordercolor rgb(eeee00) rgb(00eeee), tag: scroller:pinned
+windowrule = border_color rgb(eeee00) rgb(00eeee), match:tag scroller:pinned
 ```
 
 
