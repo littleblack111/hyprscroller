@@ -116,4 +116,8 @@ APICALL EXPORT void PLUGIN_EXIT() {
     Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleColumnWidthIdx);
     Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleWindowHeightIdx);
     Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleModeModifierIdx);
+
+    HyprlandAPI::removeLayout(PHANDLE, g_ScrollerLayout.get());
+    g_ScrollerLayout.reset();
+    g_pHyprRenderer->m_renderPass.removeAllOfType("OverviewPassElement");
 }
