@@ -159,7 +159,7 @@ std::string SelectionBorders::getDisplayName() {
 }
 
 bool SelectionBorders::doesntWantBorders() {
-    return m_pWindow->m_windowData.noBorder.valueOrDefault() || m_pWindow->m_X11DoesntWantBorders || m_pWindow->getRealBorderSize() == 0;
+    return m_pWindow->m_X11DoesntWantBorders || m_pWindow->getRealBorderSize() == 0 || !m_pWindow->m_ruleApplicator->decorate().valueOrDefault();
 }
 
 
