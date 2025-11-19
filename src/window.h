@@ -4,6 +4,7 @@
 #include "common.h"
 #include "sizes.h"
 #include "decorations.h"
+#include <hyprland/src/desktop/rule/Engine.hpp>
 
 class Window {
 public:
@@ -173,12 +174,11 @@ public:
 
     void pin(bool pin) {
         if (pin) {
-            window->m_tags.applyTag("+scroller:pinned");
+            window->m_ruleApplicator->m_tagKeeper.applyTag("+scroller:pinned");
         } else {
-            window->m_tags.applyTag("-scroller:pinned");
+            window->m_ruleApplicator->m_tagKeeper.applyTag("-scroller:pinned");
         }
-        window->updateDynamicRules();
-        g_pCompositor->updateWindowAnimatedDecorationValues(window.lock());
+        Desktop::Rule::ruleEngine()->updateAllRules();
     }
 
 private:
