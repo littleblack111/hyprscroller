@@ -1,4 +1,5 @@
 #include "sizes.h"
+#include "scroller.h"
 
 #include <sstream>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -6,6 +7,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 extern HANDLE PHANDLE;
+extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
 
 ScrollerSizes scroller_sizes;
 
@@ -99,11 +101,9 @@ Mode ScrollerSizes::get_mode(PHLMONITOR monitor)
 StandardSize ScrollerSizes::get_window_default_height(PHLWINDOW window)
 {
     // Check window rules
-    for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:windowheight")) {
-            const auto window_height = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            return get_size_from_string(window_height, StandardSize::One);
-        }
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleWindowHeightIdx)) {
+        const auto window_height = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleWindowHeightIdx)->effect;
+        return get_size_from_string(window_height, StandardSize::One);
     }
     const auto monitor = window->m_monitor.lock();
     update();
@@ -117,11 +117,9 @@ StandardSize ScrollerSizes::get_window_default_height(PHLWINDOW window)
 StandardSize ScrollerSizes::get_column_default_width(PHLWINDOW window)
 {
     // Check window rules
-    for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:columnwidth")) {
-            const auto column_width = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            return get_size_from_string(column_width, StandardSize::OneHalf);
-        }
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleColumnWidthIdx)) {
+        const auto column_width = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleColumnWidthIdx)->effect;
+        return get_size_from_string(column_width, StandardSize::OneHalf);
     }
     const auto monitor = window->m_monitor.lock();
     update();

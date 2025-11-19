@@ -1,6 +1,7 @@
 #ifndef SCROLLER_SCROLLER_H
 #define SCROLLER_SCROLLER_H
 
+#include <cstdint>
 #include <hyprland/src/layout/IHyprLayout.hpp>
 
 #include "list.h"
@@ -93,6 +94,13 @@ public:
     void mouse_move(SCallbackInfo& info, const Vector2D &mousePos);
 
     bool is_enabled() const { return enabled; }
+
+    uint32_t ruleGroupIdx = 0;
+    uint32_t ruleAlignWindowIdx = 0;
+    uint32_t ruleMarksAddIdx = 0;
+    uint32_t ruleColumnWidthIdx = 0;
+    uint32_t ruleWindowHeightIdx = 0;
+    uint32_t ruleModeModifierIdx = 0;
 
 private:
     Row *getRowForWorkspace(WORKSPACEID workspace);

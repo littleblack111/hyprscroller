@@ -317,29 +317,29 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection)
     s->add_active_window(window);
 
     // Check window rules
-    for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:group")) {
-            const auto name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            s->move_active_window_to_group(name);
-        } else if (r->m_rule.starts_with("plugin:scroller:alignwindow")) {
-            const auto dir = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            if (dir == "l" || dir == "left") {
-                s->align_column(Direction::Left);
-            } else if (dir == "r" || dir == "right") {
-                s->align_column(Direction::Right);
-            } else if (dir == "u" || dir == "up") {
-                s->align_column(Direction::Up);
-            } else if (dir == "d" || dir == "dn" || dir == "down") {
-                s->align_column(Direction::Down);
-            } else if (dir == "c" || dir == "centre" || dir == "center") {
-                s->align_column(Direction::Center);
-            } else if (dir == "m" || dir == "middle") {
-                s->align_column(Direction::Middle);
-            }
-        } else if (r->m_rule.starts_with("plugin:scroller:marksadd")) {
-            const auto mark_name = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            marks.add(window, mark_name);
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleGroupIdx)) {
+        const auto name = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleGroupIdx)->effect;
+        s->move_active_window_to_group(name);
+    }
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleAlignWindowIdx)) {
+        const auto dir = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleAlignWindowIdx)->effect;
+        if (dir == "l" || dir == "left") {
+            s->align_column(Direction::Left);
+        } else if (dir == "r" || dir == "right") {
+            s->align_column(Direction::Right);
+        } else if (dir == "u" || dir == "up") {
+            s->align_column(Direction::Up);
+        } else if (dir == "d" || dir == "dn" || dir == "down") {
+            s->align_column(Direction::Down);
+        } else if (dir == "c" || dir == "centre" || dir == "center") {
+            s->align_column(Direction::Center);
+        } else if (dir == "m" || dir == "middle") {
+            s->align_column(Direction::Middle);
         }
+    }
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleMarksAddIdx)) {
+        const auto mark_name = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleMarksAddIdx)->effect;
+        marks.add(window, mark_name);
     }
 }
 

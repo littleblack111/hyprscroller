@@ -8,11 +8,13 @@
 #include <format>
 
 #include "common.h"
+#include "scroller.h"
 #include "functions.h"
 #include "row.h"
 #include "overview.h"
 
 extern HANDLE PHANDLE;
+extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
 extern Overview *overviews;
 extern std::function<SDispatchResult(std::string)> orig_moveFocusTo;
 extern ScrollerSizes scroller_sizes;
@@ -109,30 +111,28 @@ void Row::add_active_window(PHLWINDOW window)
 
     // Evaluate window rules
     auto store_modifier = modifier;
-    for (auto &r: window->m_matchedRules) {
-        if (r->m_rule.starts_with("plugin:scroller:modemodifier")) {
-            const auto modemodifier = r->m_rule.substr(r->m_rule.find_first_of(' ') + 1);
-            // params: row|column after|before|end|beginning focus|nofocus
-            std::istringstream iss(modemodifier);
-            std::string arg;
-            while (iss >> arg) {
-                if (arg == "row") {
-                    mode = Mode::Row;
-                } else if (arg == "col" || arg == "column") {
-                    mode = Mode::Column;
-                } else if (arg == "after") {
-                    modifier.set_position(ModeModifier::POSITION_AFTER);
-                } else if (arg == "before") {
-                    modifier.set_position(ModeModifier::POSITION_BEFORE);
-                } else if (arg == "end") {
-                    modifier.set_position(ModeModifier::POSITION_END);
-                } else if (arg == "beg" || arg == "beginning") {
-                    modifier.set_position(ModeModifier::POSITION_BEGINNING);
-                } else if (arg == "focus") {
-                    modifier.set_focus(ModeModifier::FOCUS_FOCUS);
-                } else if (arg == "nofocus") {
-                    modifier.set_focus(ModeModifier::FOCUS_NOFOCUS);
-                }
+    if (window->m_ruleApplicator->m_otherProps.props.contains(g_ScrollerLayout->ruleModeModifierIdx)) {
+        const auto modemodifier = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleModeModifierIdx)->effect;
+        // params: row|column after|before|end|beginning focus|nofocus
+        std::istringstream iss(modemodifier);
+        std::string arg;
+        while (iss >> arg) {
+            if (arg == "row") {
+                mode = Mode::Row;
+            } else if (arg == "col" || arg == "column") {
+                mode = Mode::Column;
+            } else if (arg == "after") {
+                modifier.set_position(ModeModifier::POSITION_AFTER);
+            } else if (arg == "before") {
+                modifier.set_position(ModeModifier::POSITION_BEFORE);
+            } else if (arg == "end") {
+                modifier.set_position(ModeModifier::POSITION_END);
+            } else if (arg == "beg" || arg == "beginning") {
+                modifier.set_position(ModeModifier::POSITION_BEGINNING);
+            } else if (arg == "focus") {
+                modifier.set_focus(ModeModifier::FOCUS_FOCUS);
+            } else if (arg == "nofocus") {
+                modifier.set_focus(ModeModifier::FOCUS_NOFOCUS);
             }
         }
     }

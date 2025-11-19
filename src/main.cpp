@@ -1,6 +1,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/desktop/rule/windowRule/WindowRuleEffectContainer.hpp>
 #include <hyprlang.hpp>
 
 #include "dispatchers.h"
@@ -26,6 +27,13 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     }
 
     g_ScrollerLayout = std::make_unique<ScrollerLayout>();
+    g_ScrollerLayout->ruleGroupIdx        = Desktop::Rule::windowEffects()->registerEffect("scroller:group");
+    g_ScrollerLayout->ruleAlignWindowIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:alignwindow");
+    g_ScrollerLayout->ruleMarksAddIdx     = Desktop::Rule::windowEffects()->registerEffect("scroller:marksadd");
+    g_ScrollerLayout->ruleColumnWidthIdx  = Desktop::Rule::windowEffects()->registerEffect("scroller:columnwidth");
+    g_ScrollerLayout->ruleWindowHeightIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:windowheight");
+    g_ScrollerLayout->ruleModeModifierIdx = Desktop::Rule::windowEffects()->registerEffect("scroller:modemodifier");
+
     HyprlandAPI::addLayout(PHANDLE, "scroller", g_ScrollerLayout.get());
 
     dispatchers::addDispatchers();
@@ -101,4 +109,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 APICALL EXPORT void PLUGIN_EXIT() {
     g_pHyprRenderer->m_renderPass.removeAllOfType("OverviewPassElement");
+
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleGroupIdx);
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleAlignWindowIdx);
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleMarksAddIdx);
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleColumnWidthIdx);
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleWindowHeightIdx);
+    Desktop::Rule::windowEffects()->unregisterEffect(g_ScrollerLayout->ruleModeModifierIdx);
 }
