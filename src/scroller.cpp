@@ -311,7 +311,7 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection)
     }
 
     // Undo possible modifications from general options.
-    window->unsetWindowData(PRIORITY_LAYOUT);
+    window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
     window->updateWindowData();
 
     s->add_active_window(window);
@@ -546,7 +546,7 @@ void ScrollerLayout::fullscreenRequestForWindow(PHLWINDOW window,
                 *window->m_realPosition = window->m_lastFloatingPosition;
                 *window->m_realSize     = window->m_lastFloatingSize;
 
-                window->unsetWindowData(PRIORITY_LAYOUT);
+                window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
                 window->updateWindowData();
                 window->sendWindowSize();
             }
