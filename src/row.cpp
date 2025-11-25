@@ -5,13 +5,14 @@
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
-#include <format>
+#include <sstream>
 
 #include "common.h"
 #include "scroller.h"
 #include "functions.h"
 #include "row.h"
 #include "overview.h"
+#include "utils.h"
 
 extern HANDLE PHANDLE;
 extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
@@ -973,11 +974,11 @@ void Row::post_event(const std::string &event)
 {
     if (event == "mode") {
         auto str_mode = mode == Mode::Row ? "row" : "column";
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("mode, {}, {}, {}, {}:{}, {}, {}", str_mode,
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("mode, {}, {}, {}, {}:{}, {}, {}", str_mode,
             modifier.get_position_string(), modifier.get_focus_string(), modifier.get_auto_mode_string(), modifier.get_auto_param(),
             modifier.get_center_column_string(), modifier.get_center_window_string())});
     } else if (event == "overview") {
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("overview, {}", overview ? 1 : 0)});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("overview, {}", overview ? 1 : 0)});
     } else if (event == "admitwindow") {
         g_pEventManager->postEvent(SHyprIPCEvent{"scroller", "admitwindow"});
     } else if (event == "expelwindow") {
