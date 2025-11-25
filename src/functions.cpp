@@ -27,7 +27,7 @@ eFullscreenMode window_fullscreen_state(PHLWINDOW window)
 void toggle_window_fullscreen_internal(PHLWINDOW window, eFullscreenMode mode)
 {
     if (window_fullscreen_state(window) != eFullscreenMode::FSMODE_NONE) {
-        g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
+        g_pCompositor->setWindowFullscreenInternal(window, eFullscreenMode::FSMODE_NONE);
     } else {
         g_pCompositor->setWindowFullscreenInternal(window, mode);
     }

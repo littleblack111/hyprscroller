@@ -1040,6 +1040,13 @@ If true, scales the content of the windows in overview mode, like gnome/macos/wi
 overview mode. Possible values argument for the argument are: `true`|`1` (default), or
 `false`|`0`.
 
+### `only_window_one`
+
+When `true`, automatically fullscreens the window when a workspace has only one window.
+This provides a behavior similar to the `scroller:fitsize` dispatcher but is triggered
+automatically. When a second window is added to the workspace, fullscreen mode is
+automatically disabled. Possible arguments are: `false`|`0` (default), or `true`|`1`.
+
 ### `overview_render_layers`
 
 If true, layers (e.g. background layer like `hyprpaper`) are rendered in overview

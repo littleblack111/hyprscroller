@@ -17,10 +17,12 @@
 #include "row.h"
 #include "column.h"
 #include "overview.h"
+#include "utils.h"
 
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 
 
 extern HANDLE PHANDLE;
@@ -79,7 +81,7 @@ public:
         bool marked = false;
         for(auto it = marks.begin(); it != marks.end(); it++) {
             if (it->second.lock() == window) {
-                g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("mark, 1, {}", it->first)});
+                g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("mark, 1, {}", it->first)});
                 return;
             }
         }
@@ -263,13 +265,13 @@ public:
     }
 
     void post_trail_event() {
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("trail, {}, {}", get_active_number(), get_active_size())});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("trail, {}, {}", get_active_number(), get_active_size())});
     }
     void post_trailmark_event(PHLWINDOW window) {
         bool marked = false;
         if (active != nullptr && active->data()->is_marked(window))
             marked = true;
-        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", std::format("trailmark, {}", marked ? 1 : 0)});
+        g_pEventManager->postEvent(SHyprIPCEvent{"scroller", string_format("trailmark, {}", marked ? 1 : 0)});
     }
 
 private:
@@ -342,6 +344,8 @@ void ScrollerLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection)
         const auto mark_name = window->m_ruleApplicator->m_otherProps.props.at(g_ScrollerLayout->ruleMarksAddIdx)->effect;
         marks.add(window, mark_name);
     }
+
+    handleOnlyWindowOneLogic(wid);
 }
 
 /*
@@ -360,6 +364,8 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     auto s = getRowForWindow(window);
     if (s == nullptr)
         return;
+
+    WORKSPACEID affectedWorkspace = s->get_workspace();
 
     marks.remove(window);
     trails->remove_window(window);
@@ -388,6 +394,8 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
         force_focus_to_window(s->get_active_window());
+
+    handleOnlyWindowOneLogic(affectedWorkspace);
 }
 
 /*
@@ -1655,4 +1663,47 @@ void ScrollerLayout::mouse_move(SCallbackInfo& info, const Vector2D &mousePos) {
         }
     }
     inside = false;
+}
+
+size_t ScrollerLayout::countWindowsInWorkspace(WORKSPACEID workspace)
+{
+	auto s = getRowForWorkspace(workspace);
+	if (s == nullptr)
+		return 0;
+
+	std::vector<PHLWINDOWREF> windows;
+	s->get_windows(windows);
+	return windows.size();
+}
+
+void ScrollerLayout::handleOnlyWindowOneLogic(WORKSPACEID workspace)
+{
+	static auto* const *ONLY_WINDOW_ONE = (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:only_window_one")->getDataStaticPtr();
+	if (!**ONLY_WINDOW_ONE) {
+		return;
+	}
+
+	auto s = getRowForWorkspace(workspace);
+	if (s == nullptr) {
+		return;
+	}
+	if (s->is_overview()) {
+		return;
+	}
+
+	auto active_window = s->get_active_window();
+	if (active_window && window_fullscreen_state(active_window) != eFullscreenMode::FSMODE_NONE) {
+		return;
+	}
+
+	const size_t window_count = countWindowsInWorkspace(workspace);
+
+	if (window_count == 1) {
+		const Mode original_mode = s->get_mode();
+		s->set_mode(Mode::Row, true);
+		s->fit_size(FitSize::Active);
+		s->set_mode(original_mode, true);
+	} else if (window_count > 1) {
+		s->recalculate_row_geometry();
+	}
 }
