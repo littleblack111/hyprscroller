@@ -5,6 +5,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 
 extern HANDLE PHANDLE;
 extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;

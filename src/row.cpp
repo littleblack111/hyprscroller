@@ -6,6 +6,7 @@
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <sstream>
 
 #include "column.h"
@@ -27,8 +28,7 @@ Row::Row(WORKSPACEID workspace)
       reorder(Reorder::Auto), pinned(nullptr), active(nullptr)
 {
     post_event("overview");
-    const auto WORKSPACE = g_pCompositor->getWorkspaceByID(workspace);
-    const auto PMONITOR = WORKSPACE && WORKSPACE->m_monitor ? WORKSPACE->m_monitor.lock() : Desktop::focusState()->monitor();
+    const auto PMONITOR = Desktop::focusState()->monitor();
     set_mode(scroller_sizes.get_mode(PMONITOR));
     update_sizes(PMONITOR);
 }

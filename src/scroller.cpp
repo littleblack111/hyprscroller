@@ -10,6 +10,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 
 #include "scroller.h"
 #include "common.h"
@@ -54,7 +55,7 @@ public:
     void del(const std::string &name) {
         const auto mark = marks.find(name);
         if (mark != marks.end()) {
-            if (Desktop::focusState()->window() == mark->second)
+            if (Desktop::focusState()->window() == mark->second.lock())
                 post_mark_event(nullptr);
             marks.erase(mark);
         }
@@ -387,9 +388,10 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     if (window == g_pInputManager->m_currentlyDraggedWindow)
         return;
 
-    WORKSPACEID workspace_id = Desktop::focusState()->monitor()->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = Desktop::focusState()->monitor()->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
@@ -413,9 +415,10 @@ void ScrollerLayout::onWindowRemovedFloating(PHLWINDOW window)
         // to prevent input method losing focus
         return;
     }
-    WORKSPACEID workspace_id = Desktop::focusState()->monitor()->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = Desktop::focusState()->monitor()->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     auto s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
@@ -667,9 +670,10 @@ PHLWINDOW ScrollerLayout::getNextWindowCandidate(PHLWINDOW/* old_window */)
     // in Row, because WORKSPACE has also lost it. Storing it in Row is hard
     // to keep synchronized. So for now, unmapping a window from a workspace
     // different than the active one, loses full screen state.
-    WORKSPACEID workspace_id = Desktop::focusState()->monitor()->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = Desktop::focusState()->monitor()->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     auto s = getRowForWorkspace(workspace_id);
     if (s == nullptr)
@@ -806,13 +810,14 @@ void ScrollerLayout::onDisable() {
     Return 0,0 if unpredictable
 */
 Vector2D ScrollerLayout::predictSizeForNewWindowTiled() {
-    if (!Desktop::focusState()->monitor())
+    auto monitor = Desktop::focusState()->monitor();
+    if (!monitor)
         return {};
 
-    WORKSPACEID workspace_id = Desktop::focusState()->monitor()->activeWorkspaceID();
+    WORKSPACEID workspace_id = monitor->activeWorkspaceID();
     auto s = getRowForWorkspace(workspace_id);
     if (s == nullptr) {
-        Vector2D size = Desktop::focusState()->monitor()->m_size;
+        Vector2D size = monitor->m_size;
         size.x *= 0.5;
         return size;
     }
@@ -937,9 +942,10 @@ void ScrollerLayout::move_focus(WORKSPACEID workspace, Direction direction)
 
     if (s->move_focus(direction, **focus_wrap == 0 ? false : true)) {
         // Changed workspace
-        WORKSPACEID workspace_id = Desktop::focusState()->monitor()->activeSpecialWorkspaceID();
+        auto monitor = Desktop::focusState()->monitor();
+        WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
         if (!workspace_id) {
-            workspace_id = Desktop::focusState()->monitor()->activeWorkspaceID();
+            workspace_id = monitor->activeWorkspaceID();
         }
         s = getRowForWorkspace(workspace_id);
         if (s != nullptr) {

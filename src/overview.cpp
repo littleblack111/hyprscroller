@@ -3,6 +3,7 @@
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 
 #include "overview.h"
 
