@@ -4,6 +4,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 
 SDispatchResult this_moveFocusTo(std::string args)
 {
@@ -36,10 +37,11 @@ void toggle_window_fullscreen_internal(PHLWINDOW window, eFullscreenMode mode)
 WORKSPACEID get_workspace_id()
 {
     WORKSPACEID workspace_id;
-    if (g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID()) {
-        workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    if (monitor->activeSpecialWorkspaceID()) {
+        workspace_id = monitor->activeSpecialWorkspaceID();
     } else {
-        workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     if (workspace_id == WORKSPACE_INVALID)
         return -1;
@@ -58,7 +60,7 @@ void update_relative_cursor_coords(PHLWINDOW window)
 void force_focus_to_window(PHLWINDOW window)
 {
     g_pInputManager->unconstrainMouse();
-    g_pCompositor->focusWindow(window);
+    Desktop::focusState()->fullWindowFocus(window);
     window->warpCursor();
 
     g_pInputManager->m_forcedFocus = window;
@@ -87,7 +89,7 @@ void switch_to_window(PHLWINDOW from, PHLWINDOW to)
         }
         if (change_workspace) {
             // This is to override overview trying to stay in an overview workspace
-            g_pCompositor->m_lastMonitor = to->m_monitor;
+            Desktop::focusState()->rawMonitorFocus(to->m_monitor.lock());
         }
         force_focus_to_window(to);
         if (mode != eFullscreenMode::FSMODE_NONE) {

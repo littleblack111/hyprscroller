@@ -4,6 +4,7 @@
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <optional>
 
 #include "enums.h"
@@ -43,10 +44,11 @@ namespace dispatchers {
             return -1;
 
         int workspace_id;
-        if (g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID()) {
-            workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+        auto monitor = Desktop::focusState()->monitor();
+        if (monitor->activeSpecialWorkspaceID()) {
+            workspace_id = monitor->activeSpecialWorkspaceID();
         } else {
-            workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+            workspace_id = monitor->activeWorkspaceID();
         }
         if (workspace_id == WORKSPACE_INVALID)
             return -1;

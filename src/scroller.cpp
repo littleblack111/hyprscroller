@@ -9,6 +9,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 
 #include "scroller.h"
 #include "common.h"
@@ -53,7 +54,7 @@ public:
     void del(const std::string &name) {
         const auto mark = marks.find(name);
         if (mark != marks.end()) {
-            if (g_pCompositor->m_lastWindow == mark->second)
+            if (Desktop::focusState()->window() == mark->second.lock())
                 post_mark_event(nullptr);
             marks.erase(mark);
         }
@@ -386,9 +387,10 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     if (window == g_pInputManager->m_currentlyDraggedWindow)
         return;
 
-    WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
@@ -412,13 +414,14 @@ void ScrollerLayout::onWindowRemovedFloating(PHLWINDOW window)
         // to prevent input method losing focus
         return;
     }
-    WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     auto s = getRowForWorkspace(workspace_id);
     if (s != nullptr)
-        g_pCompositor->focusWindow(s->get_active_window());
+        Desktop::focusState()->fullWindowFocus(s->get_active_window());
 }
 
 /*
@@ -515,7 +518,7 @@ void ScrollerLayout::recalculateWindow(PHLWINDOW window)
 void ScrollerLayout::resizeActiveWindow(const Vector2D &delta,
                                         eRectCorner /* corner */, PHLWINDOW window)
 {
-    const auto PWINDOW = window ? window : g_pCompositor->m_lastWindow.lock();
+    const auto PWINDOW = window ? window : Desktop::focusState()->window();
     auto s = getRowForWindow(PWINDOW);
     if (s == nullptr) {
         // Window is not tiled
@@ -667,9 +670,10 @@ PHLWINDOW ScrollerLayout::getNextWindowCandidate(PHLWINDOW/* old_window */)
     // in Row, because WORKSPACE has also lost it. Storing it in Row is hard
     // to keep synchronized. So for now, unmapping a window from a workspace
     // different than the active one, loses full screen state.
-    WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+    auto monitor = Desktop::focusState()->monitor();
+    WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
     if (!workspace_id) {
-        workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+        workspace_id = monitor->activeWorkspaceID();
     }
     auto s = getRowForWorkspace(workspace_id);
     if (s == nullptr)
@@ -806,13 +810,14 @@ void ScrollerLayout::onDisable() {
     Return 0,0 if unpredictable
 */
 Vector2D ScrollerLayout::predictSizeForNewWindowTiled() {
-    if (!g_pCompositor->m_lastMonitor)
+    auto monitor = Desktop::focusState()->monitor();
+    if (!monitor)
         return {};
 
-    WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+    WORKSPACEID workspace_id = monitor->activeWorkspaceID();
     auto s = getRowForWorkspace(workspace_id);
     if (s == nullptr) {
-        Vector2D size =g_pCompositor->m_lastMonitor->m_size;
+        Vector2D size = monitor->m_size;
         size.x *= 0.5;
         return size;
     }
@@ -937,9 +942,10 @@ void ScrollerLayout::move_focus(WORKSPACEID workspace, Direction direction)
 
     if (s->move_focus(direction, **focus_wrap == 0 ? false : true)) {
         // Changed workspace
-        WORKSPACEID workspace_id = g_pCompositor->m_lastMonitor->activeSpecialWorkspaceID();
+        auto monitor = Desktop::focusState()->monitor();
+        WORKSPACEID workspace_id = monitor->activeSpecialWorkspaceID();
         if (!workspace_id) {
-            workspace_id = g_pCompositor->m_lastMonitor->activeWorkspaceID();
+            workspace_id = monitor->activeWorkspaceID();
         }
         s = getRowForWorkspace(workspace_id);
         if (s != nullptr) {
@@ -1141,7 +1147,7 @@ void ScrollerLayout::selection_toggle(WORKSPACEID workspace) {
     s->selection_toggle();
 
     // Re-render that monitor to remove decorations
-    g_pHyprRenderer->damageMonitor(g_pCompositor->m_lastMonitor.lock());
+    g_pHyprRenderer->damageMonitor(Desktop::focusState()->monitor());
 }
 
 void ScrollerLayout::selection_set(PHLWINDOWREF window) {
@@ -1169,7 +1175,7 @@ void ScrollerLayout::selection_workspace(WORKSPACEID workspace) {
     s->selection_all();
 
     // Re-render that monitor to render decorations
-    g_pHyprRenderer->damageMonitor(g_pCompositor->m_lastMonitor.lock());
+    g_pHyprRenderer->damageMonitor(Desktop::focusState()->monitor());
 }
 
 // Move all selected columns/windows to workspace, and locate them in direction wrt
@@ -1224,7 +1230,7 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace, Direction direction) 
             bool overview = row->data()->is_overview();
             if (overview)
                 row->data()->toggle_overview();
-            g_pCompositor->focusWindow(row->data()->get_active_window());
+            Desktop::focusState()->fullWindowFocus(row->data()->get_active_window());
             row->data()->recalculate_row_geometry();
             if (overview)
                 row->data()->toggle_overview();
@@ -1232,7 +1238,7 @@ void ScrollerLayout::selection_move(WORKSPACEID workspace, Direction direction) 
         row = next;
     }
 
-    g_pCompositor->focusWindow(s->get_active_window());
+    Desktop::focusState()->fullWindowFocus(s->get_active_window());
     // Reset selection
     selection_reset();
 
@@ -1306,8 +1312,8 @@ void ScrollerLayout::jump() {
 
     static auto const *KEYS = (Hyprlang::STRING const *)HyprlandAPI::getConfigValue(PHANDLE, "plugin:scroller:jump_labels_keys")->getDataStaticPtr();
     jump_data->keys = *KEYS;
-    jump_data->from_window = g_pCompositor->m_lastWindow;
-    jump_data->from_monitor = g_pCompositor->m_lastMonitor;
+    jump_data->from_window = Desktop::focusState()->window();
+    jump_data->from_monitor = Desktop::focusState()->monitor();
 
     if (jump_data->keys.size() == 1 && jump_data->windows.size() > 1) {
         delete jump_data;
@@ -1392,7 +1398,7 @@ void ScrollerLayout::jump() {
                 jump_data->from_window->warpCursor();
             else {
                 g_pCompositor->warpCursorTo(jump_data->from_monitor.lock()->middle());
-                g_pCompositor->setActiveMonitor(jump_data->from_monitor.lock());
+                Desktop::focusState()->rawMonitorFocus(jump_data->from_monitor.lock());
             }
         }
         info.cancelled = true;
