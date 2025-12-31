@@ -16,7 +16,6 @@
 #include "row.h"
 #include "overview.h"
 #include "utils.h"
-#include "hypr_compat.h"
 
 extern HANDLE PHANDLE;
 extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
@@ -1122,10 +1121,10 @@ bool Row::update_sizes(PHLMONITOR monitor)
     // For now, support only constant CCssGapData
     auto gaps_in = WORKSPACERULE.gapsIn.value_or(*PGAPSIN).m_top;
     auto gaps_out = WORKSPACERULE.gapsOut.value_or(*PGAPSOUT);
-    const auto SIZE = monitor->m_size;
-    const auto POS = monitor->m_position;
-    const auto TOPLEFT = hyprscroller_compat::reserved_top_left(monitor);
-    const auto BOTTOMRIGHT = hyprscroller_compat::reserved_bottom_right(monitor);
+	const auto SIZE = monitor->m_size;
+	const auto POS = monitor->m_position;
+	const auto TOPLEFT = Vector2D{monitor->m_reservedArea.left(), monitor->m_reservedArea.top()};
+	const auto BOTTOMRIGHT = Vector2D{monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom()};
     Box box = { POS + TOPLEFT, SIZE - TOPLEFT - BOTTOMRIGHT };
 
     full = Box(POS, SIZE);
