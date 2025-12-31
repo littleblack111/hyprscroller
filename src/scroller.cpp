@@ -25,7 +25,7 @@
 #include <algorithm>
 
 
-#include "hypr_compat.h"
+
 
 extern HANDLE PHANDLE;
 extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
@@ -570,8 +570,8 @@ void ScrollerLayout::fullscreenRequestForWindow(PHLWINDOW window,
                 *window->m_realPosition = PMONITOR->m_position;
                 *window->m_realSize     = PMONITOR->m_size;
             } else {
-                const auto TOPLEFT = hyprscroller_compat::reserved_top_left(PMONITOR);
-                const auto BOTTOMRIGHT = hyprscroller_compat::reserved_bottom_right(PMONITOR);
+                const auto TOPLEFT = Vector2D{PMONITOR->m_reservedArea.left(), PMONITOR->m_reservedArea.top()};
+                const auto BOTTOMRIGHT = Vector2D{PMONITOR->m_reservedArea.right(), PMONITOR->m_reservedArea.bottom()};
                 Box box = { PMONITOR->m_position + TOPLEFT,
                             PMONITOR->m_size - TOPLEFT - BOTTOMRIGHT};
                 *window->m_realPosition = Vector2D(box.x, box.y);
@@ -1557,8 +1557,8 @@ void ScrollerLayout::mouse_move(SCallbackInfo& info, const Vector2D &mousePos) {
     WORKSPACEID workspace_id = PMONITOR->activeWorkspaceID();
     auto s = getRowForWorkspace(workspace_id);
     if (s != nullptr) {
-        const auto TOPLEFT = hyprscroller_compat::reserved_top_left(PMONITOR);
-        const auto BOTTOMRIGHT = hyprscroller_compat::reserved_bottom_right(PMONITOR);
+        const auto TOPLEFT = Vector2D{PMONITOR->m_reservedArea.left(), PMONITOR->m_reservedArea.top()};
+        const auto BOTTOMRIGHT = Vector2D{PMONITOR->m_reservedArea.right(), PMONITOR->m_reservedArea.bottom()};
         Box box = { PMONITOR->m_position + TOPLEFT,
                     PMONITOR->m_size - TOPLEFT - BOTTOMRIGHT};
 
