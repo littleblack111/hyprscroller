@@ -4,6 +4,8 @@
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
 
 #include "overview.h"
 
