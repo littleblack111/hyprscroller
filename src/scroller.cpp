@@ -1,4 +1,4 @@
-#include <hyprland/src/desktop/Window.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
@@ -24,6 +24,8 @@
 #include <vector>
 #include <algorithm>
 
+
+#include "hypr_compat.h"
 
 extern HANDLE PHANDLE;
 extern std::unique_ptr<ScrollerLayout> g_ScrollerLayout;
@@ -568,8 +570,10 @@ void ScrollerLayout::fullscreenRequestForWindow(PHLWINDOW window,
                 *window->m_realPosition = PMONITOR->m_position;
                 *window->m_realSize     = PMONITOR->m_size;
             } else {
-                Box box = { PMONITOR->m_position + PMONITOR->m_reservedTopLeft,
-                            PMONITOR->m_size - PMONITOR->m_reservedTopLeft - PMONITOR->m_reservedBottomRight};
+                const auto TOPLEFT = hyprscroller_compat::reserved_top_left(PMONITOR);
+                const auto BOTTOMRIGHT = hyprscroller_compat::reserved_bottom_right(PMONITOR);
+                Box box = { PMONITOR->m_position + TOPLEFT,
+                            PMONITOR->m_size - TOPLEFT - BOTTOMRIGHT};
                 *window->m_realPosition = Vector2D(box.x, box.y);
                 *window->m_realSize = Vector2D(box.w, box.h);
                 window->sendWindowSize();
@@ -1553,8 +1557,10 @@ void ScrollerLayout::mouse_move(SCallbackInfo& info, const Vector2D &mousePos) {
     WORKSPACEID workspace_id = PMONITOR->activeWorkspaceID();
     auto s = getRowForWorkspace(workspace_id);
     if (s != nullptr) {
-        Box box = { PMONITOR->m_position + PMONITOR->m_reservedTopLeft,
-                    PMONITOR->m_size - PMONITOR->m_reservedTopLeft - PMONITOR->m_reservedBottomRight};
+        const auto TOPLEFT = hyprscroller_compat::reserved_top_left(PMONITOR);
+        const auto BOTTOMRIGHT = hyprscroller_compat::reserved_bottom_right(PMONITOR);
+        Box box = { PMONITOR->m_position + TOPLEFT,
+                    PMONITOR->m_size - TOPLEFT - BOTTOMRIGHT};
 
         if (!s->get_max().contains_point(mousePos) && box.contains_point(mousePos)) {
             // We are in gaps_out territory

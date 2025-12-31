@@ -3,6 +3,8 @@
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
 
 #include "overview.h"
 
@@ -55,7 +57,7 @@ private:
 
 // Needed to show windows that are outside of the viewport
 static bool hookVisibleOnMonitor(void *thisptr, PHLMONITOR monitor) {
-    CWindow *window = static_cast<CWindow *>(thisptr);
+    Desktop::View::CWindow *window = static_cast<Desktop::View::CWindow *>(thisptr);
     if (overviews->overview_enabled(window->workspaceID())) {
         return true;
     }
@@ -179,7 +181,7 @@ static PHLMONITOR hookGetMonitorFromVector(void *thisptr, const Vector2D& point)
     }
 
     if (!pBestMon) { // ?????
-        //Debug::log(WARN, "getMonitorFromVector no close mon???");
+        //Log::logger->log(Log::WARN, "getMonitorFromVector no close mon???");
         return compositor->m_monitors.front();
     }
 
@@ -222,11 +224,11 @@ static Vector2D hookGetCursorPosForMonitor(void *thisptr, PHLMONITOR monitor) {
     if (!FNS.empty()) { \
         g_p ## name_capital ## Hook = HyprlandAPI::createFunctionHook(PHANDLE, FNS[0].address, (bool *)hook ## name_capital); \
         if (g_p ## name_capital ## Hook == nullptr) { \
-            Debug::log(WARN, "[hyprscroller] Overview: Hook of " #name " failed, function found but hook not successfull"); \
+            Log::logger->log(Log::WARN, "[hyprscroller] Overview: Hook of " #name " failed, function found but hook not successfull"); \
             return; \
         } \
     } else { \
-        Debug::log(WARN, "[hyprscroller] Overview: Hook of " #name " failed, function not found"); \
+        Log::logger->log(Log::WARN, "[hyprscroller] Overview: Hook of " #name " failed, function not found"); \
         return; \
     } \
 } while (0)
