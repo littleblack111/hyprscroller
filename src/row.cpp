@@ -719,7 +719,7 @@ void Row::move_active_window_to_group(const std::string &name)
     active->data()->set_name(name);
 }
 
-void Row::move_active_column(Direction dir)
+bool Row::move_active_column(Direction dir)
 {
     bool overview_on = overview;
     if (overview)
@@ -732,35 +732,47 @@ void Row::move_active_column(Direction dir)
         toggle_window_fullscreen_internal(window, eFullscreenMode::FSMODE_NONE);
     }
 
+    bool window_has_moved = true;
+
     switch (dir) {
     case Direction::Right:
         if (active != columns.last()) {
             auto next = active->next();
             columns.move_after(next, active);
+        } else {
+            window_has_moved = false;
         }
         break;
     case Direction::Left:
         if (active != columns.first()) {
             auto prev = active->prev();
             columns.move_before(prev, active);
+        } else {
+            window_has_moved = false;
         }
         break;
     case Direction::Up:
+        // TODO: should this also move to the next workspace if no movement?
         active->data()->move_active_up();
         break;
     case Direction::Down:
+        // TODO: should this also move to the next workspace if no movement?
         active->data()->move_active_down();
         break;
     case Direction::Begin: {
-        if (active == columns.first())
-            break;
-        columns.move_before(columns.first(), active);
+        if (active != columns.first()) {
+            columns.move_before(columns.first(), active);
+        } else {
+            window_has_moved = false;
+        }
         break;
     }
     case Direction::End: {
-        if (active == columns.last())
-            break;
-        columns.move_after(columns.last(), active);
+        if (active != columns.last()) {
+            columns.move_after(columns.last(), active);
+        } else {
+            window_has_moved = false;
+        }
         break;
     }
     case Direction::Center:
@@ -779,9 +791,11 @@ void Row::move_active_column(Direction dir)
 
     if (overview_on)
         toggle_overview();
+
+    return window_has_moved;
 }
 
-void Row::move_active_window(Direction dir)
+bool Row::move_active_window(Direction dir)
 {
     bool overview_on = overview;
     if (overview)
@@ -794,12 +808,16 @@ void Row::move_active_window(Direction dir)
         toggle_window_fullscreen_internal(window, eFullscreenMode::FSMODE_NONE);
     }
 
+    bool window_has_moved = true;
+
     switch (dir) {
     case Direction::Right:
         if (active->data()->size() == 1) {
             if (active != columns.last()) {
                 // Need to admit the window in the col to its right
                 admit_window(AdmitExpelDirection::Right);
+            } else {
+                window_has_moved = false;
             }
         } else {
             // Need to expel the window (to the right)
@@ -811,6 +829,8 @@ void Row::move_active_window(Direction dir)
             if (active != columns.first()) {
                 // Need to admit the window in the col to its left
                 admit_window(AdmitExpelDirection::Left);
+            } else {
+                window_has_moved = false;
             }
         } else {
             // Need to expel the window to the left
@@ -818,16 +838,20 @@ void Row::move_active_window(Direction dir)
         }
         break;
     case Direction::Up:
+        // TODO: should this also move to the next workspace if no movement?
         active->data()->move_active_up();
         break;
     case Direction::Down:
+        // TODO: should this also move to the next workspace if no movement?
         active->data()->move_active_down();
         break;
     case Direction::Begin: {
         if (active->data()->size() == 1) {
-            if (active == columns.first())
-                break;
-            columns.move_before(columns.first(), active);
+            if (active != columns.first()) {
+                columns.move_before(columns.first(), active);
+            } else {
+                window_has_moved = false;
+            }
         } else {
             // Expel the window and create a column at the beginning
             expel_window(AdmitExpelDirection::Left);
@@ -837,9 +861,11 @@ void Row::move_active_window(Direction dir)
     }
     case Direction::End: {
         if (active->data()->size() == 1) {
-            if (active == columns.last())
-                break;
-            columns.move_after(columns.last(), active);
+            if (active != columns.last()) {
+                columns.move_after(columns.last(), active);
+            } else {
+                window_has_moved = false;
+            }
         } else {
             // Expel window and create a column at the end
             expel_window(AdmitExpelDirection::Right);
@@ -865,6 +891,8 @@ void Row::move_active_window(Direction dir)
 
     if (overview_on)
         toggle_overview();
+
+    return window_has_moved;
 }
 
 void Row::admit_window(AdmitExpelDirection dir)

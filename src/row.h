@@ -60,8 +60,8 @@ public:
     void selection_get(const Row *row, List<Column *> &selection);
     bool selection_exists() const;
     void move_active_window_to_group(const std::string &name);
-    void move_active_column(Direction dir);
-    void move_active_window(Direction dir);
+    bool move_active_column(Direction dir);
+    bool move_active_window(Direction dir);
     void admit_window(AdmitExpelDirection dir);
     void expel_window(AdmitExpelDirection dir);
     Vector2D predict_window_size() const;

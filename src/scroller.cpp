@@ -941,16 +941,16 @@ void ScrollerLayout::move_focus(WORKSPACEID workspace, Direction direction)
     switch_to_window(from, to);
 }
 
-void ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, bool nomode) {
+bool ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, bool nomode) {
     auto s = getRowForWorkspace(workspace);
     if (s == nullptr) {
-        return;
+        return false;
     }
 
     if (nomode)
-        s->move_active_window(direction);
+        return s->move_active_window(direction);
     else
-        s->move_active_column(direction);
+        return s->move_active_column(direction);
 }
 
 void ScrollerLayout::align_window(WORKSPACEID workspace, Direction direction) {

@@ -156,7 +156,9 @@ namespace dispatchers {
         if (auto direction = parse_move_arg(args[0])) {
             if (direction != Direction::Invalid) {
                 bool nomode = args.contains("nomode");
-                g_ScrollerLayout->move_window(workspace, *direction, nomode);
+                // if we couldn't move the window, let Hyprland deal with it to move it to a new monitor/workspace
+                if (!g_ScrollerLayout->move_window(workspace, *direction, nomode))
+                    orig_moveActiveTo(arg);
             } else {
                orig_moveActiveTo(arg);
             }
