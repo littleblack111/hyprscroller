@@ -48,7 +48,7 @@ void Row::find_auto_insert_point(Mode &new_mode, ListNode<Column *> *&new_active
     if (auto_mode == ModeModifier::AUTO_AUTO) {
         auto auto_param = modifier.get_auto_param();
         if (mode == Mode::Row) {
-            if (active->data()->size() < auto_param) {
+            if (active && active->data()->size() < auto_param) {
                 mode = Mode::Column;
                 return;
             }
@@ -267,11 +267,11 @@ bool Row::move_focus(Direction dir, bool focus_wrap)
             changed_workspace = true;
         break;
     case Direction::Up:
-        if (!active->data()->move_focus_up(focus_wrap))
+        if (active && !active->data()->move_focus_up(focus_wrap))
             changed_workspace = true;
         break;
     case Direction::Down:
-        if (!active->data()->move_focus_down(focus_wrap))
+        if (active && !active->data()->move_focus_down(focus_wrap))
             changed_workspace = true;
         break;
     case Direction::Begin:
@@ -304,7 +304,7 @@ bool Row::move_focus_left(bool focus_wrap)
         orig_moveFocusTo("l");
         return false;
     }
-    active = active->prev();
+    active = active ? active->prev() : nullptr;
     return true;
 }
 
@@ -322,7 +322,7 @@ bool Row::move_focus_right(bool focus_wrap)
         orig_moveFocusTo("r");
         return false;
     }
-    active = active->next();
+    active = active ? active->next() : nullptr;
     return true;
 }
 
@@ -347,7 +347,7 @@ Vector2D Row::calculate_gap_x(const ListNode<Column *> *column) const
 
 void Row::resize_active_column(int step)
 {
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
 
     bool overview_on = overview;
@@ -380,7 +380,7 @@ void Row::resize_active_column(int step)
 
 void Row::size_active_column(StandardSize size)
 {
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
 
     bool overview_on = overview;
@@ -421,7 +421,7 @@ void Row::size_active_column(const std::string &fraction)
 void Row::resize_active_window(const Vector2D &delta)
 {
     // If the active window in the active column is fullscreen, ignore.
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
     if (overview)
         return;
@@ -479,7 +479,7 @@ ModeModifier Row::get_mode_modifier() const
 
 void Row::align_column(Direction dir)
 {
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
     if (overview)
         return;
@@ -539,7 +539,7 @@ Column *Row::get_pinned_column() const
 
 void Row::selection_toggle()
 {
-    active->data()->selection_toggle();
+    if (active) active->data()->selection_toggle();
 }
 
 void Row::selection_set(PHLWINDOWREF window)
@@ -649,6 +649,8 @@ void Row::selection_get(const Row *row, List<Column *> &selection)
 
 void Row::center_active_column()
 {
+    if (!active)
+        return;
     Column *column = active->data();
     if (column->fullscreen())
         return;
@@ -700,6 +702,8 @@ void Row::center_active_column()
 
 void Row::move_active_window_to_group(const std::string &name)
 {
+    if (!active)
+        return;
     for (auto c = columns.first(); c != nullptr; c = c->next()) {
         Column *col = c->data();
         if (col->get_name() == name) {
@@ -717,8 +721,6 @@ void Row::move_active_window_to_group(const std::string &name)
             return;
         }
     }
-    if (!active)
-        return;
     active->data()->set_name(name);
 }
 
@@ -906,7 +908,7 @@ bool Row::move_active_window(Direction dir)
 
 void Row::admit_window(AdmitExpelDirection dir)
 {
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
     if (dir == AdmitExpelDirection::Left && active == columns.first())
         return;
@@ -956,7 +958,7 @@ void Row::admit_window(AdmitExpelDirection dir)
 
 void Row::expel_window(AdmitExpelDirection dir)
 {
-    if (active->data()->fullscreen())
+    if (!active || active->data()->fullscreen())
         return;
     if (active->data()->size() == 1)
         // nothing to expel
@@ -1056,6 +1058,8 @@ bool Row::update_sizes(PHLMONITOR monitor)
 
 void Row::set_fullscreen_mode_windows(eFullscreenMode mode)
 {
+    if (!active)
+        return;
     Column *column = active->data();
     switch (mode) {
     case eFullscreenMode::FSMODE_NONE:
@@ -1103,7 +1107,7 @@ void Row::set_fullscreen_mode(PHLWINDOW window, eFullscreenMode cur_mode, eFulls
 
 void Row::fit_size(FitSize fitsize)
 {
-    if (active->data()->fullscreen()) {
+    if (!active || active->data()->fullscreen()) {
         return;
     }
     if (overview) {
@@ -1270,20 +1274,22 @@ void Row::toggle_overview()
             Column *col = c->data();
             col->pop_overview_geom();
         }
-        // Try to maintain the positions except if the active is not visible,
-        // in that case, make it visible.
-        Column *acolumn = active->data();
-        if (acolumn->get_geom_x() < max.x) {
-            acolumn->set_geom_pos(max.x, max.y);
-        } else if (acolumn->get_geom_x() + acolumn->get_geom_w() > max.x + max.w) {
-            acolumn->set_geom_pos(max.x + max.w - acolumn->get_geom_w(), max.y);
-        }
-        adjust_columns(active);
-        // Turn fullscreen mode back on if enabled
-        auto window = get_active_window();
-        window->warpCursor();
-        if (preoverview_fsmode != eFullscreenMode::FSMODE_NONE) {
-            toggle_window_fullscreen_internal(window, preoverview_fsmode);
+        if (active) {
+            // Try to maintain the positions except if the active is not visible,
+            // in that case, make it visible.
+            Column *acolumn = active->data();
+            if (acolumn->get_geom_x() < max.x) {
+                acolumn->set_geom_pos(max.x, max.y);
+            } else if (acolumn->get_geom_x() + acolumn->get_geom_w() > max.x + max.w) {
+                acolumn->set_geom_pos(max.x + max.w - acolumn->get_geom_w(), max.y);
+            }
+            adjust_columns(active);
+            // Turn fullscreen mode back on if enabled
+            auto window = get_active_window();
+            window->warpCursor();
+            if (preoverview_fsmode != eFullscreenMode::FSMODE_NONE) {
+                toggle_window_fullscreen_internal(window, preoverview_fsmode);
+            }
         }
     }
 
@@ -1596,7 +1602,7 @@ void Row::scroll_update(Direction dir, const Vector2D &delta) {
     case Direction::Up:
     case Direction::Down: {
         auto column = get_mouse_column();
-        column->data()->scroll_update(delta.y);
+        if (column) column->data()->scroll_update(delta.y);
         break;
     }
     case Direction::Left:
@@ -1624,7 +1630,7 @@ void Row::scroll_end(Direction dir)
     if (dir == Direction::Left) {
         auto newactive = columns.last();
         // Take the first after active that has its left edge in the viewport
-        for (auto col = active->next(); col != nullptr; col = col->next()) {
+        for (auto col = active ? active->next() : newactive; col != nullptr; col = col->next()) {
             const auto x0 = col->data()->get_geom_x();
             if (x0 > max.x && x0 < max.x + max.w) {
                 newactive = col;
@@ -1635,7 +1641,7 @@ void Row::scroll_end(Direction dir)
     } else if (dir == Direction::Right) {
         auto newactive = columns.first();
         // Take the first abefore active that has its right edge in the viewport
-        for (auto col = active->prev(); col != nullptr; col = col->prev()) {
+        for (auto col = active ? active->prev() : newactive; col != nullptr; col = col->prev()) {
             const auto x0 = col->data()->get_geom_x();
             const auto x1 = x0 + col->data()->get_geom_w();
             if (x1 > max.x && x1 < max.x + max.w) {
@@ -1647,7 +1653,7 @@ void Row::scroll_end(Direction dir)
     } else if (dir == Direction::Up || dir == Direction::Down) {
         // This column should be the same while swiping. Mouse coordinates don't change while swiping
         auto column = get_mouse_column();
-        column->data()->scroll_end(dir, gap);
+        if (column) column->data()->scroll_end(dir, gap);
     }
     recalculate_row_geometry();
     Desktop::focusState()->fullWindowFocus(get_active_window());
