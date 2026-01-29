@@ -170,6 +170,7 @@ public:
     void move_to_workspace(PHLWORKSPACE workspace) {
         window->moveToWorkspace(workspace);
         window->m_monitor = workspace->m_monitor;
+        window->updateToplevel();
     }
 
     void pin(bool pin) {
