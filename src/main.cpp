@@ -121,4 +121,5 @@ APICALL EXPORT void PLUGIN_EXIT() {
     g_ScrollerLayout->onDisable();
     g_ScrollerLayout.reset();
     g_pHyprRenderer->m_renderPass.removeAllOfType("OverviewPassElement");
+    g_pConfigManager->reload();
 }
