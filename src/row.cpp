@@ -8,6 +8,7 @@
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <format>
 
+#include "column.h"
 #include "common.h"
 #include "scroller.h"
 #include "functions.h"
@@ -777,7 +778,7 @@ bool Row::move_active_column(Direction dir)
     }
     case Direction::Center:
     default:
-        return;
+        return false;
     }
 
     reorder = Reorder::Auto;
@@ -875,7 +876,7 @@ bool Row::move_active_window(Direction dir)
     }
     case Direction::Center:
     default:
-        return;
+        return false;
     }
 
     reorder = Reorder::Auto;
@@ -1642,4 +1643,42 @@ void Row::scroll_end(Direction dir)
     }
     recalculate_row_geometry();
     Desktop::focusState()->fullWindowFocus(get_active_window());
+}
+
+Column* Row::pop_first_column()
+{
+    auto item = columns.first();
+    if (item == nullptr) return nullptr;
+    Column *ret = item->data();
+    columns.pop_front();
+    if (active && active->data() == ret) active = columns.first();
+    recalculate_row_geometry();
+    return ret;
+}
+
+Column* Row::pop_last_column()
+{
+    auto item = columns.last();
+    if (item == nullptr) return nullptr;
+    Column *ret = item->data();
+    columns.pop_back();
+    if (active && active->data() == ret) active = columns.last();
+    recalculate_row_geometry();
+    return ret;
+}
+
+void Row::insert_first_column(Column *col)
+{
+    columns.push_front(col);
+    col->row = this;
+    active = columns.first();
+    recalculate_row_geometry();
+}
+
+void Row::insert_last_column(Column *col)
+{
+    columns.push_back(col);
+    col->row = this;
+    active = columns.last();
+    recalculate_row_geometry();
 }

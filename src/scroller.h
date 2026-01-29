@@ -50,7 +50,7 @@ public:
     void set_window_width(WORKSPACEID workspace, const std::string &arg);
     void set_window_height(WORKSPACEID workspace, const std::string &arg);
     void move_focus(WORKSPACEID workspace, Direction);
-    bool move_window(WORKSPACEID workspace, Direction, bool);
+    void move_window(WORKSPACEID workspace, Direction, bool);
     void align_window(WORKSPACEID workspace, Direction);
     void admit_window(WORKSPACEID workspace, AdmitExpelDirection direction);
     void expel_window(WORKSPACEID workspace, AdmitExpelDirection direction);

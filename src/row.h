@@ -79,6 +79,11 @@ public:
     void scroll_update(Direction dir, const Vector2D &delta);
     void scroll_end(Direction dir);
 
+    Column *pop_first_column();
+    Column *pop_last_column();
+    void insert_first_column(Column *);
+    void insert_last_column(Column *);
+
 private:
     bool move_focus_left(bool focus_wrap); 
     bool move_focus_right(bool focus_wrap);

@@ -717,3 +717,10 @@ void Column::pin(bool pin) const
     }
 }
 
+void Column::move_to_workspace(PHLWORKSPACE workspace)
+{
+    for (auto w = windows.first(); w != nullptr; w = w->next()) {
+        w->data()->move_to_workspace(workspace);
+    }
+}
+

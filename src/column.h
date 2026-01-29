@@ -121,6 +121,7 @@ public:
     void pin(bool pin) const;
     void scroll_update(double delta_y);
     void scroll_end(Direction dir, double gap);
+    void move_to_workspace(PHLWORKSPACE);
 
 private:
     // Adjust all the windows in the column using 'window' as anchor
@@ -142,6 +143,8 @@ private:
     List<Window *> windows;
     std::string name;
     const Row *row;
+
+    friend class Row;
 };
 
 

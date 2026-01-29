@@ -1,3 +1,4 @@
+#include <hyprland/src/SharedDefs.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -941,16 +942,62 @@ void ScrollerLayout::move_focus(WORKSPACEID workspace, Direction direction)
     switch_to_window(from, to);
 }
 
-bool ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, bool nomode) {
+void ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, bool nomode) {
     auto s = getRowForWorkspace(workspace);
     if (s == nullptr) {
-        return false;
+        return;
     }
 
-    if (nomode)
-        return s->move_active_window(direction);
-    else
-        return s->move_active_column(direction);
+    auto moved_window = nomode ? s->move_active_window(direction) : s->move_active_column(direction);
+    if (!moved_window) {
+        switch (direction) {
+        case Direction::Right:
+            if (auto monitor = g_pCompositor->getMonitorInDirection('r')) {
+                WORKSPACEID new_workspace_id = monitor->activeWorkspaceID();
+                auto s2 = getRowForWorkspace(new_workspace_id);
+                if (s2 == nullptr) {
+                    s2 = new Row(new_workspace_id);
+                    rows.push_back(s2);
+                }
+                const Box oldmax = s->get_max();
+                auto col = s->pop_last_column();
+                if (col)
+                {
+                    col->move_to_workspace(monitor->m_activeWorkspace);
+                    s2->insert_first_column(col);
+                    s2->update_windows(oldmax, true);
+                    Desktop::focusState()->rawMonitorFocus(monitor);
+                }
+            }
+            break;
+        case Direction::Left:
+            if (auto monitor = g_pCompositor->getMonitorInDirection('l')) {
+                WORKSPACEID new_workspace_id = monitor->activeWorkspaceID();
+                auto s2 = getRowForWorkspace(new_workspace_id);
+                if (s2 == nullptr) {
+                    s2 = new Row(new_workspace_id);
+                    rows.push_back(s2);
+                }
+                const Box oldmax = s->get_max();
+                auto col = s->pop_first_column();
+                if (col)
+                {
+                    col->move_to_workspace(monitor->m_activeWorkspace);
+                    s2->insert_last_column(col);
+                    s2->update_windows(oldmax, true);
+                    Desktop::focusState()->rawMonitorFocus(monitor);
+                }
+            }
+            break;
+        case Direction::Up:
+        case Direction::Down:
+        case Direction::Begin:
+        case Direction::End:
+        case Direction::Center:
+        default:
+            break;
+        }
+    }
 }
 
 void ScrollerLayout::align_window(WORKSPACEID workspace, Direction direction) {
