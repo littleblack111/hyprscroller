@@ -26,7 +26,7 @@ Row::Row(WORKSPACEID workspace)
 {
     post_event("overview");
     const auto WORKSPACE = g_pCompositor->getWorkspaceByID(workspace);
-    const auto PMONITOR = WORKSPACE->m_monitor.lock();
+    const auto PMONITOR = WORKSPACE && WORKSPACE->m_monitor ? WORKSPACE->m_monitor.lock() : Desktop::focusState()->monitor();
     set_mode(scroller_sizes.get_mode(PMONITOR));
     update_sizes(PMONITOR);
 }
@@ -717,11 +717,16 @@ void Row::move_active_window_to_group(const std::string &name)
             return;
         }
     }
+    if (!active)
+        return;
     active->data()->set_name(name);
 }
 
 bool Row::move_active_column(Direction dir)
 {
+    if (!active)
+        return false;
+
     bool overview_on = overview;
     if (overview)
         toggle_overview();
@@ -798,6 +803,9 @@ bool Row::move_active_column(Direction dir)
 
 bool Row::move_active_window(Direction dir)
 {
+    if (!active)
+        return false;
+
     bool overview_on = overview;
     if (overview)
         toggle_overview();
@@ -1652,6 +1660,7 @@ Column* Row::pop_first_column()
     Column *ret = item->data();
     columns.pop_front();
     if (active && active->data() == ret) active = columns.first();
+    if (pinned && pinned->data() == ret) pinned = columns.first();
     recalculate_row_geometry();
     return ret;
 }
@@ -1663,6 +1672,7 @@ Column* Row::pop_last_column()
     Column *ret = item->data();
     columns.pop_back();
     if (active && active->data() == ret) active = columns.last();
+    if (pinned && pinned->data() == ret) pinned = columns.last();
     recalculate_row_geometry();
     return ret;
 }

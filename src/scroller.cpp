@@ -949,7 +949,7 @@ void ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, boo
     }
 
     auto moved_window = nomode ? s->move_active_window(direction) : s->move_active_column(direction);
-    if (!moved_window && !s->is_overview()) {
+    if (!moved_window && !s->is_overview() && !s->empty()) {
         switch (direction) {
         case Direction::Right:
             if (auto monitor = g_pCompositor->getMonitorInDirection('r')) {

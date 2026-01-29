@@ -10,6 +10,7 @@ public:
     size_t size() const {
         return columns.size();
     }
+    bool empty() const { return columns.empty(); }
     WORKSPACEID get_workspace() const { return workspace; }
     const Box &get_max() const { return max; }
     bool has_window(PHLWINDOW window) const {
