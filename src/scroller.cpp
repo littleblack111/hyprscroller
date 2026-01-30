@@ -997,6 +997,17 @@ void ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, boo
         default:
             break;
         }
+
+        if (s->empty()) {
+            // It was the last one, remove the row
+            for (auto row = rows.first(); row != nullptr; row = row->next()) {
+                if (row->data() == s) {
+                    rows.erase(row);
+                    delete row->data();
+                    break;
+                }
+            }
+        }
     }
 }
 
