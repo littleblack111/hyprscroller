@@ -26,7 +26,10 @@ public:
     bool has_window(PHLWINDOW window) const;
     Window *get_window(PHLWINDOW window) const;
     void add_active_window(PHLWINDOW window);
+    void add_active_window_from_bottom(PHLWINDOW window);
+    void add_active_window_from_top(PHLWINDOW window);
     void remove_window(PHLWINDOW window);
+    PHLWINDOW remove_active_window();
     void focus_window(PHLWINDOW window);
     double get_geom_x() const {
         return geom.x;
@@ -90,8 +93,8 @@ public:
     PHLWINDOW get_active_window() {
         return active->data()->get_window();
     }
-    void move_active_up();
-    void move_active_down();
+    bool move_active_up();
+    bool move_active_down();
     bool move_focus_up(bool focus_wrap);
     bool move_focus_down(bool focus_wrap);
     void admit_window(Window *window);

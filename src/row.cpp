@@ -186,6 +186,38 @@ void Row::add_active_window(PHLWINDOW window)
         toggle_overview();
 }
 
+void Row::add_active_window(PHLWINDOW window, bool fromBottom)
+{
+    bool overview_on = overview;
+    if (overview)
+        toggle_overview();
+
+    eFullscreenMode fsmode;
+    if (active != nullptr) {
+        auto awindow = get_active_window();
+        fsmode = window_fullscreen_state(awindow);
+        if (fsmode != eFullscreenMode::FSMODE_NONE) {
+            toggle_window_fullscreen_internal(awindow, eFullscreenMode::FSMODE_NONE);
+        }
+    } else {
+        fsmode = eFullscreenMode::FSMODE_NONE;
+    }
+
+    if (active && fromBottom) active->data()->add_active_window_from_bottom(window);
+    else if (active) active->data()->add_active_window_from_top(window);
+    else active = columns.push_back(new Column(window, this));
+
+    reorder = Reorder::Auto;
+    recalculate_row_geometry();
+
+    if (fsmode != eFullscreenMode::FSMODE_NONE) {
+        toggle_window_fullscreen_internal(window, fsmode);
+        force_focus_to_window(window);
+    }
+    if (overview_on)
+        toggle_overview();
+}
+
 // Remove a window and re-adapt rows and columns, returning
 // true if successful, or false if this is the last row
 // so the layout can remove it.
@@ -232,13 +264,67 @@ bool Row::remove_window(PHLWINDOW window)
     }
     if (fsmode != eFullscreenMode::FSMODE_NONE) {
         PHLWINDOW awindow = get_active_window();
-        toggle_window_fullscreen_internal(awindow, fsmode);
-        force_focus_to_window(awindow);
+        if (awindow) {
+            toggle_window_fullscreen_internal(awindow, fsmode);
+            force_focus_to_window(awindow);
+        }
     }
     if (overview_on)
         toggle_overview();
 
     return true;
+}
+
+// Remove a window and re-adapt rows and columns
+PHLWINDOW Row::remove_active_window()
+{
+    if (!active)
+        return nullptr;
+    auto window = active->data()->get_active_window();
+
+    bool overview_on = overview;
+    if (overview)
+        toggle_overview();
+
+    eFullscreenMode fsmode = window_fullscreen_state(window);
+    if (fsmode != eFullscreenMode::FSMODE_NONE) {
+        toggle_window_fullscreen_internal(window, eFullscreenMode::FSMODE_NONE);
+    }
+
+    reorder = Reorder::Auto;
+    auto win = active->data()->remove_active_window();
+    Column *col = active->data();
+    if (col->size() == 0) {
+        if (active == pinned) {
+            pinned = nullptr;
+        }
+        // make NEXT one active before deleting (like PaperWM)
+        // If active was the only one left, doesn't matter
+        // whether it points to end() or not, the row will
+        // be deleted by the parent.
+        auto stored_active = active;
+        active = active != columns.last() ? active->next() : active->prev();
+        delete col;
+        columns.erase(stored_active);
+        if (columns.empty()) {
+            return win;
+        } else {
+            recalculate_row_geometry();
+        }
+    } else {
+        active->data()->recalculate_col_geometry(calculate_gap_x(active), gap, true);
+    }
+    if (fsmode != eFullscreenMode::FSMODE_NONE) {
+        PHLWINDOW awindow = get_active_window();
+        if (awindow) {
+            toggle_window_fullscreen_internal(awindow, fsmode);
+            force_focus_to_window(awindow);
+        }
+    }
+    if (overview_on)
+        toggle_overview();
+
+    return win;
 }
 
 void Row::focus_window(PHLWINDOW window)
@@ -760,12 +846,10 @@ bool Row::move_active_column(Direction dir)
         }
         break;
     case Direction::Up:
-        // TODO: should this also move to the next workspace if no movement?
-        active->data()->move_active_up();
+        window_has_moved = active->data()->move_active_up();
         break;
     case Direction::Down:
-        // TODO: should this also move to the next workspace if no movement?
-        active->data()->move_active_down();
+        window_has_moved = active->data()->move_active_down();
         break;
     case Direction::Begin: {
         if (active != columns.first()) {
@@ -849,12 +933,10 @@ bool Row::move_active_window(Direction dir)
         }
         break;
     case Direction::Up:
-        // TODO: should this also move to the next workspace if no movement?
-        active->data()->move_active_up();
+        window_has_moved = active->data()->move_active_up();
         break;
     case Direction::Down:
-        // TODO: should this also move to the next workspace if no movement?
-        active->data()->move_active_down();
+        window_has_moved = active->data()->move_active_down();
         break;
     case Direction::Begin: {
         if (active->data()->size() == 1) {

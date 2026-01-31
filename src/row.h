@@ -35,11 +35,13 @@ public:
         }
     }
     void add_active_window(PHLWINDOW window);
+    void add_active_window(PHLWINDOW window, bool fromBottom);
     // Remove a window and re-adapt rows and columns, returning
     // true if successful, or false if this is the last row
     // so the layout can remove it.
     bool remove_window(PHLWINDOW window);
-    void focus_window(PHLWINDOW window); 
+    PHLWINDOW remove_active_window();
+    void focus_window(PHLWINDOW window);
     bool move_focus(Direction dir, bool focus_wrap);
 
     void resize_active_column(int step);

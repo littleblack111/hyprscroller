@@ -990,7 +990,45 @@ void ScrollerLayout::move_window(WORKSPACEID workspace, Direction direction, boo
             }
             break;
         case Direction::Up:
+            if (auto monitor = g_pCompositor->getMonitorInDirection('u')) {
+                WORKSPACEID new_workspace_id = monitor->activeWorkspaceID();
+                auto s2 = getRowForWorkspace(new_workspace_id);
+                if (s2 == nullptr) {
+                    s2 = new Row(new_workspace_id);
+                    rows.push_back(s2);
+                }
+                auto window = s->remove_active_window();
+                if (window)
+                {
+                    auto workspace = monitor->m_activeWorkspace;
+                    window->moveToWorkspace(workspace);
+                    window->m_monitor = workspace->m_monitor;
+                    window->updateToplevel();
+                    s2->add_active_window(window, true);
+                    Desktop::focusState()->rawMonitorFocus(monitor);
+                }
+            }
+            break;
         case Direction::Down:
+            if (auto monitor = g_pCompositor->getMonitorInDirection('d')) {
+                WORKSPACEID new_workspace_id = monitor->activeWorkspaceID();
+                auto s2 = getRowForWorkspace(new_workspace_id);
+                if (s2 == nullptr) {
+                    s2 = new Row(new_workspace_id);
+                    rows.push_back(s2);
+                }
+                auto window = s->remove_active_window();
+                if (window)
+                {
+                    auto workspace = monitor->m_activeWorkspace;
+                    window->moveToWorkspace(workspace);
+                    window->m_monitor = workspace->m_monitor;
+                    window->updateToplevel();
+                    s2->add_active_window(window, false);
+                    Desktop::focusState()->rawMonitorFocus(monitor);
+                }
+            }
+            break;
         case Direction::Begin:
         case Direction::End:
         case Direction::Center:

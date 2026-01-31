@@ -48,11 +48,11 @@ public:
     size_t size() const { return m_size; }
     bool empty() const { return m_size == 0; }
 
-    void push_back(T value) {
-        emplace_after(m_last, value);
+    ListNode<T> *push_back(T value) {
+        return emplace_after(m_last, value);
     }
-    void push_front(T value) {
-        emplace_before(m_first, value);
+    ListNode<T> *push_front(T value) {
+        return emplace_before(m_first, value);
     }
 
     void pop_back() {

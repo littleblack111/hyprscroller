@@ -113,6 +113,32 @@ void Column::add_active_window(PHLWINDOW window)
         window->m_noInitialFocus = true;
 }
 
+void Column::add_active_window_from_bottom(PHLWINDOW window)
+{
+    reorder = Reorder::Auto;
+    // Store the default window width internally, regardless of that of the column
+    auto wwidth = scroller_sizes.get_column_default_width(window);
+    auto w = new Window(window, row->get_max().y, row->get_max().h, wwidth);
+
+    if (row->get_pinned_column() == this)
+        w->pin(true);
+
+    active = windows.push_back(w);
+}
+
+void Column::add_active_window_from_top(PHLWINDOW window)
+{
+    reorder = Reorder::Auto;
+    // Store the default window width internally, regardless of that of the column
+    auto wwidth = scroller_sizes.get_column_default_width(window);
+    auto w = new Window(window, row->get_max().y, row->get_max().h, wwidth);
+
+    if (row->get_pinned_column() == this)
+        w->pin(true);
+
+    active = windows.push_front(w);
+}
+
 void Column::remove_window(PHLWINDOW window)
 {
     reorder = Reorder::Auto;
@@ -133,6 +159,24 @@ void Column::remove_window(PHLWINDOW window)
             return;
         }
     }
+}
+
+PHLWINDOW Column::remove_active_window()
+{
+    reorder = Reorder::Auto;
+    auto win = active;
+    // Make next window active (like PaperWM)
+    // If it is the last, make the previous one active.
+    // If it is the only window. active will point to nullptr,
+    // but it doesn't matter because the caller will delete
+    // the column.
+    active = active != windows.last() ? active->next() : active->prev();
+    if (row->get_pinned_column() == this)
+        win->data()->pin(false);
+    auto ret = win->data()->get_window();
+    windows.erase(win);
+    delete win->data();
+    return ret;
 }
 
 void Column::focus_window(PHLWINDOW window)
@@ -274,24 +318,26 @@ void Column::recalculate_col_geometry_overview(const Vector2D &gap_x, double gap
     adjust_windows(windows.first(), gap_x, gap, true);
 }
 
-void Column::move_active_up()
+bool Column::move_active_up()
 {
     if (active == windows.first())
-        return;
+        return false;
 
     reorder = Reorder::Auto;
     auto prev = active->prev();
     windows.swap(active, prev);
+    return true;
 }
 
-void Column::move_active_down()
+bool Column::move_active_down()
 {
     if (active == windows.last())
-        return;
+        return false;
 
     reorder = Reorder::Auto;
     auto next = active->next();
     windows.swap(active, next);
+    return true;
 }
 
 bool Column::move_focus_up(bool focus_wrap)
