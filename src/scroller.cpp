@@ -373,11 +373,11 @@ void ScrollerLayout::onWindowRemovedTiling(PHLWINDOW window)
     trails->remove_window(window);
 
     if (!s->remove_window(window)) {
-        // It was the last one, remove the row
         for (auto row = rows.first(); row != nullptr; row = row->next()) {
             if (row->data() == s) {
+                auto* rowData = row->data();
                 rows.erase(row);
-                delete row->data();
+                delete rowData;
                 break;
             }
         }
